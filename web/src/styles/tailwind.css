@@ -1,0 +1,154 @@
+@import 'tailwindcss';
+
+/* class/data-theme 双保险的暗色变体（组件主要用语义 token，dark: 很少用到） */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  --md-bg: #f6f7f9;
+  --md-surface: #ffffff;
+  --md-surface-2: #f1f3f6;
+  --md-surface-3: #e8ebf0;
+  --md-text: #17181c;
+  --md-muted: #667085;
+  --md-border: #e4e7ec;
+  --md-accent: #5b5bd6;
+  --md-accent-strong: #4a4ac4;
+  --md-accent-soft: #eeeefc;
+  --md-danger: #dc2626;
+  --md-danger-soft: #fde8e8;
+  --md-warn: #b45309;
+  --md-warn-soft: #fef3c7;
+  --md-shadow-card: 0 1px 2px rgb(16 24 40 / 0.05), 0 1px 3px rgb(16 24 40 / 0.07);
+  --md-shadow-pop: 0 10px 34px rgb(16 24 40 / 0.16);
+  color-scheme: light;
+}
+
+[data-theme='dark'] {
+  --md-bg: #0e1014;
+  --md-surface: #161920;
+  --md-surface-2: #1d212b;
+  --md-surface-3: #272c38;
+  --md-text: #e7e9ee;
+  --md-muted: #8b93a3;
+  --md-border: #272c38;
+  --md-accent: #7c7cf0;
+  --md-accent-strong: #9898f6;
+  --md-accent-soft: #22233f;
+  --md-danger: #f87171;
+  --md-danger-soft: #3a1d1d;
+  --md-warn: #fbbf24;
+  --md-warn-soft: #3a2c10;
+  --md-shadow-card: 0 1px 2px rgb(0 0 0 / 0.45);
+  --md-shadow-pop: 0 10px 34px rgb(0 0 0 / 0.55);
+  color-scheme: dark;
+}
+
+@theme inline {
+  --color-bg: var(--md-bg);
+  --color-surface: var(--md-surface);
+  --color-surface2: var(--md-surface-2);
+  --color-surface3: var(--md-surface-3);
+  --color-text: var(--md-text);
+  --color-muted: var(--md-muted);
+  --color-line: var(--md-border);
+  --color-accent: var(--md-accent);
+  --color-accent-strong: var(--md-accent-strong);
+  --color-accent-soft: var(--md-accent-soft);
+  --color-danger: var(--md-danger);
+  --color-danger-soft: var(--md-danger-soft);
+  --color-warn: var(--md-warn);
+  --color-warn-soft: var(--md-warn-soft);
+  --shadow-card: var(--md-shadow-card);
+  --shadow-pop: var(--md-shadow-pop);
+  --font-sans: -apple-system, BlinkMacSystemFont, 'SF Pro Text', Inter, 'Segoe UI',
+    'PingFang SC', 'Hiragino Sans GB', 'Noto Sans SC', 'Microsoft YaHei', sans-serif;
+}
+
+html,
+body,
+#root {
+  height: 100%;
+}
+
+body {
+  @apply bg-bg text-text font-sans antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* 细滚动条（桌面） */
+@media (pointer: fine) {
+  *::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  *::-webkit-scrollbar-thumb {
+    background: var(--md-surface-3);
+    border-radius: 8px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--md-muted);
+    background-clip: content-box;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* 通用动效 */
+@keyframes md-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes md-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes md-sheet-up {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+@keyframes md-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+.md-fade-in {
+  animation: md-fade-in 0.18s ease-out;
+}
+.md-slide-up {
+  animation: md-slide-up 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.md-sheet-up {
+  animation: md-sheet-up 0.26s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.md-skeleton {
+  background: linear-gradient(90deg, var(--md-surface-2) 25%, var(--md-surface-3) 50%, var(--md-surface-2) 75%);
+  background-size: 200% 100%;
+  animation: md-shimmer 1.4s linear infinite;
+}

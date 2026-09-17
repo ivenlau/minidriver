@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "minidriver",
+  "main": "src/index.ts",
+  "compatibility_date": "2025-05-05",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "directory": "./dist/client",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  "r2_buckets": [
+    { "binding": "R2", "bucket_name": "minidriver" }
+  ],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "minidriver",
+      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "triggers": {
+    "crons": ["17 3 * * *"]
+  },
+  "vars": {
+    // 生产环境改成你的域名（分享链接会用它拼接）
+    "APP_PUBLIC_URL": "https://minidriver.<your-subdomain>.workers.dev",
+    // 允许的来源（逗号分隔）。不填则默认为 APP_PUBLIC_URL
+    "ALLOWED_ORIGINS": ""
+  },
+  "observability": { "enabled": true }
+}
