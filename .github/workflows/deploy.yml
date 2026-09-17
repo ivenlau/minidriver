@@ -45,7 +45,9 @@ jobs:
       - name: API 冒烟测试（本地 workerd + D1/R2 模拟）
         run: |
           node scripts/ensure-dist.mjs
-          printf 'SESSION_ENC_KEY=%s\nSETUP_TOKEN=ci-smoke-token\n' \
+          # APP_PUBLIC_URL 必须显式覆盖：否则 wrangler.jsonc 的生产域名
+          # 会泄漏进 dev 环境，导致 Passkey RP ID 校验失败
+          printf 'SESSION_ENC_KEY=%s\nSETUP_TOKEN=ci-smoke-token\nAPP_PUBLIC_URL=http://127.0.0.1:8787\nALLOWED_ORIGINS=http://127.0.0.1:8787\n' \
             "$(node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))')" > .dev.vars
           npm run db:migrate:local
           npx wrangler dev --port 8787 &

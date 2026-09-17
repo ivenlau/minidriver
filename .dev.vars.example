@@ -4,5 +4,7 @@
 SESSION_ENC_KEY=BASE64_OF_32_RANDOM_BYTES
 SETUP_TOKEN=dev-setup-token
 # 本地开发固定为 vite 的地址（浏览器实际访问 5173，wrangler 在 8787）
+# ⚠️ 这两行必须保留：.dev.vars 只覆盖它写了的键，
+#    删掉后 wrangler.jsonc 里的生产域名会泄漏进本地，导致 Passkey 校验失败
 APP_PUBLIC_URL=http://localhost:5173
 ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787,http://127.0.0.1:8787
