@@ -277,8 +277,8 @@ nodes.put('/nodes/:id/content', async (c) => {
 })
 
 nodes.get('/nodes/:id/content', async (c) => {
+  // 注意：回收站中的文件（软删除）允许预览与下载，主人随时可查看待删除的内容
   const node = await requireNode(c.env.DB, c.req.param('id'))
-  if (node.deleted_at) throw Errors.notFound('NODE_NOT_FOUND')
   if (node.type !== 'file' || !node.r2_key) throw Errors.badRequest('NOT_A_FILE')
   const range = parseRange(c.req.header('range'), node.size ?? 0)
   const obj = await c.env.R2.get(node.r2_key, range ? { range } : undefined)

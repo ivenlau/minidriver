@@ -492,6 +492,8 @@ async function main() {
     check('软删除进回收站', del.res.status === 200)
     const trash = await call('GET', '/api/trash')
     check('回收站可见', trash.json?.items?.some((n) => n.id === helloId))
+    const trashedContent = await fetch(`${BASE}/api/nodes/${helloId}/content`, { headers: { cookie: jar.header() } })
+    check('回收站内文件可预览/下载', trashedContent.status === 200)
     const gone = await call('GET', `/api/nodes?parent=${folderId}`)
     check('原目录不可见', !gone.json?.items?.some((n) => n.id === helloId))
 
