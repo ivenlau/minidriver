@@ -656,7 +656,7 @@ export function NodeRow({ node, lang, selected, anySelected, onToggleSelect, onO
         }}
         className={cn(
           'flex h-5 w-5 shrink-0 items-center justify-center rounded-md border transition-all',
-          selected ? 'border-accent bg-accent text-white' : cn('border-line bg-surface', anySelected ? 'opacity-100' : 'opacity-40 group-hover:opacity-100'),
+          selected ? 'border-accent bg-accent text-white' : cn('border-line bg-surface', anySelected ? 'opacity-100' : 'opacity-70 group-hover:opacity-100'),
         )}
         aria-label={t('common.selectAll')}
       >
@@ -732,7 +732,7 @@ function NodeCard({ node, lang, selected, anySelected, onToggleSelect, onOpen, m
           }}
           className={cn(
             'absolute top-2 left-2 flex h-5 w-5 items-center justify-center rounded-md border transition-all',
-            selected ? 'border-accent bg-accent text-white opacity-100' : 'border-line bg-surface opacity-40 group-hover:opacity-100',
+            selected ? 'border-accent bg-accent text-white opacity-100' : 'border-line bg-surface opacity-70 group-hover:opacity-100',
           )}
         >
           {selected && (
