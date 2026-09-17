@@ -172,7 +172,7 @@ function EditShareDialog({
       if (Object.keys(body).length > 0) {
         await api.patch(`/api/shares/${share.id}`, body)
         onSaved()
-        toast(t('common.ok'), 'success')
+        toast(t('share.saved'), 'success')
       }
       onClose()
     } catch {

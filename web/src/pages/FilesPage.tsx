@@ -190,7 +190,7 @@ export function FilesPage() {
     }
     setSelected(new Set())
     invalidate()
-    if (failed > 0) toast(t('errors.UNKNOWN'), 'error')
+    if (failed > 0) toast(t('files.deleteFailed'), 'error')
   }
 
   // 全窗口拖放上传
@@ -442,7 +442,7 @@ export function FilesPage() {
           onMoved={(ok) => {
             setSelected(new Set())
             invalidate()
-            if (ok > 0) toast(t('common.ok'), 'success')
+            if (ok > 0) toast(t('files.moved'), 'success')
           }}
         />
       )}

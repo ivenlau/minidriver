@@ -113,7 +113,7 @@ function SecuritySection() {
     try {
       await registerPasskey(name)
       refresh()
-      toast(t('common.ok'), 'success')
+      toast(t('settings.passkeyAdded'), 'success')
     } catch (err) {
       toast(t(`errors.${err instanceof Error && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'}`), 'error')
     }
@@ -288,7 +288,7 @@ function PasswordCard({
       setCurrent('')
       setNext('')
       onChange()
-      toast(t('common.ok'), 'success')
+      toast(t('settings.saved'), 'success')
     } catch (err) {
       toast(errText(err), 'error')
     }
@@ -299,7 +299,7 @@ function PasswordCard({
       setMode('view')
       setCurrent('')
       onChange()
-      toast(t('common.ok'), 'success')
+      toast(t('settings.passwordDisabled'), 'success')
     } catch (err) {
       toast(errText(err), 'error')
     }
@@ -385,7 +385,7 @@ function TotpCard({
       setSetup(null)
       setCode('')
       onChange()
-      toast(t('common.ok'), 'success')
+      toast(t('settings.totpEnabled'), 'success')
     } catch (err) {
       toast(errText(err), 'error')
     }
@@ -396,7 +396,7 @@ function TotpCard({
       setDisabling(false)
       setDisableCode('')
       onChange()
-      toast(t('common.ok'), 'success')
+      toast(t('settings.totpDisabled'), 'success')
     } catch (err) {
       toast(errText(err), 'error')
     }
@@ -528,7 +528,7 @@ function RecoveryCodesModal({ codes, onClose }: { codes: string[] | null; onClos
           {t('auth.copyAll')}
         </Button>
         <Button variant="primary" onClick={onClose}>
-          {t('common.ok')}
+          {t('settings.gotIt')}
         </Button>
       </div>
     </Modal>

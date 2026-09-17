@@ -74,6 +74,8 @@
     "deleteConfirm_one": "确定要把所选 {{count}} 项移入回收站吗？",
     "deleteConfirm_other": "确定要把所选 {{count}} 项移入回收站吗？",
     "downloading": "正在准备下载…",
+    "moved": "已移动",
+    "deleteFailed": "部分文件删除失败",
     "namePlaceholder": "文件夹名称",
     "uploadQueue": "上传中",
     "uploadDoneCount": "{{count}} 个文件已上传",
@@ -118,6 +120,7 @@
     "noShares": "还没有创建过分享",
     "noSharesHint": "在文件的菜单里选择“分享”即可生成临时链接",
     "oneTime": "一次性链接",
+    "saved": "分享设置已保存",
     "editTitle": "编辑分享设置"
   },
   "trash": {
@@ -182,6 +185,12 @@
     "foldersCount": "{{count}} 个文件夹",
     "inTrash": "回收站中 {{count}} 项（{{size}}）",
     "account": "账号",
+    "passkeyAdded": "Passkey 已添加",
+    "saved": "已保存",
+    "passwordDisabled": "密码登录已停用",
+    "totpEnabled": "两步验证已启用",
+    "totpDisabled": "两步验证已停用",
+    "gotIt": "我知道了",
     "saveFailed": "保存失败"
   },
   "auth": {

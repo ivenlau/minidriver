@@ -74,6 +74,8 @@
     "deleteConfirm_one": "Move {{count}} item to trash?",
     "deleteConfirm_other": "Move {{count}} items to trash?",
     "downloading": "Preparing download…",
+    "moved": "Moved",
+    "deleteFailed": "Some items couldn't be deleted",
     "namePlaceholder": "Folder name",
     "uploadQueue": "Uploading",
     "uploadDoneCount": "{{count}} files uploaded",
@@ -118,6 +120,7 @@
     "noShares": "No shares yet",
     "noSharesHint": "Pick “Share” from a file's menu to create a temporary link",
     "oneTime": "One-time link",
+    "saved": "Share settings saved",
     "editTitle": "Edit share settings"
   },
   "trash": {
@@ -182,6 +185,12 @@
     "foldersCount": "{{count}} folders",
     "inTrash": "{{count}} items in trash ({{size}})",
     "account": "Account",
+    "passkeyAdded": "Passkey added",
+    "saved": "Saved",
+    "passwordDisabled": "Password sign-in disabled",
+    "totpEnabled": "Two-factor enabled",
+    "totpDisabled": "Two-factor disabled",
+    "gotIt": "Got it",
     "saveFailed": "Failed to save"
   },
   "auth": {
