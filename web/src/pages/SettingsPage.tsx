@@ -3,12 +3,12 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import QRCode from 'qrcode'
 import {
-  Cloud,
   Copy,
   Fingerprint,
   HardDrive,
   KeyRound,
   Laptop,
+  Palette,
   Plus,
   RefreshCw,
   ShieldCheck,
@@ -39,7 +39,7 @@ export function SettingsPage() {
 
   const tabs: { key: Section; label: string; icon: typeof ShieldCheck }[] = [
     { key: 'security', label: t('settings.sectionSecurity'), icon: ShieldCheck },
-    { key: 'appearance', label: t('settings.sectionAppearance'), icon: Cloud },
+    { key: 'appearance', label: t('settings.sectionAppearance'), icon: Palette },
     { key: 'language', label: t('settings.sectionLanguage'), icon: KeyRound },
     { key: 'storage', label: t('settings.sectionStorage'), icon: HardDrive },
   ]

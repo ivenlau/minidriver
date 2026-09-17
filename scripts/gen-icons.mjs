@@ -44,40 +44,40 @@ function encodePNG(size, rgba) {
   ])
 }
 
-/** 按 favicon.svg 的 64 视箱几何渲染（圆角方块 + 双峰山 + 圆点） */
+/** 按 favicon.svg 的 64 视箱几何渲染（圆角方块 + 实心云朵，与 Logo.tsx / lucide Cloud 同源） */
 function render(size) {
   const SS = 3 // 超采样
   const S = size * SS
   const img = new Uint8Array(size * size * 4)
-  const poly = [
-    [20, 40],
-    [28, 24],
-    [36, 36],
-    [42, 28],
-    [46, 40],
-  ].map(([x, y]) => [(x * S) / 64, (y * S) / 64])
-  const dot = { x: (44 * S) / 64, y: (21 * S) / 64, r: (3.5 * S) / 64 }
-  const rr = (16 * S) / 64
-  const inPoly = (px, py) => {
-    let inside = false
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const [xi, yi] = poly[i]
-      const [xj, yj] = poly[j]
-      if (yi > py !== yj > py && px < ((xj - xi) * (py - yi)) / (yj - yi) + xi) inside = !inside
-    }
-    return inside
-  }
+  // 云朵 = 大圆 + 小圆 + 底部圆角矩形（lucide Cloud 路径的圆近似，坐标已换算到 64 视箱）
+  const circles = [
+    { x: (25.4 * S) / 64, y: (32 * S) / 64, r: (16.8 * S) / 64 },
+    { x: (45.8 * S) / 64, y: (38 * S) / 64, r: (10.8 * S) / 64 },
+  ]
+  const rr = (16 * S) / 64 // 圆角方块圆角
+  const bx0 = (29.4 * S) / 64
+  const bx1 = (41.8 * S) / 64
+  const by0 = (42 * S) / 64
+  const by1 = (44.8 * S) / 64
+  const br = (4 * S) / 64
   const blend = (i, r, g, b, a) => {
     img[i] = Math.round(a * r + (1 - a) * img[i])
     img[i + 1] = Math.round(a * g + (1 - a) * img[i + 1])
     img[i + 2] = Math.round(a * b + (1 - a) * img[i + 2])
     img[i + 3] = Math.round(255 * (a + img[i + 3] / 255 * (1 - a)))
   }
+  const inCloud = (px, py) => {
+    for (const c of circles) {
+      if ((px - c.x) ** 2 + (py - c.y) ** 2 <= c.r * c.r) return true
+    }
+    const cx = Math.min(Math.max(px, bx0), bx1)
+    const cy = Math.min(Math.max(py, by0), by1)
+    return (px - cx) ** 2 + (py - cy) ** 2 <= br * br
+  }
   for (let y = 0; y < size; y++) {
     for (let x = 0; x < size; x++) {
       let bg = 0
-      let mtn = 0
-      let dot = 0
+      let cloud = 0
       for (let sy = 0; sy < SS; sy++) {
         for (let sx = 0; sx < SS; sx++) {
           const px = x * SS + sx + 0.5
@@ -85,15 +85,13 @@ function render(size) {
           const cx = Math.min(Math.max(px, rr), S - rr)
           const cy = Math.min(Math.max(py, rr), S - rr)
           if ((px - cx) ** 2 + (py - cy) ** 2 <= rr * rr) bg++
-          if (inPoly(px, py)) mtn++
-          if ((px - dot.x) ** 2 + (py - dot.y) ** 2 <= dot.r * dot.r) dot++
+          if (inCloud(px, py)) cloud++
         }
       }
       const i = (y * size + x) * 4
       const cov = SS * SS
       if (bg > 0) blend(i, 0x5b, 0x5b, 0xd6, bg / cov)
-      if (mtn > 0) blend(i, 255, 255, 255, (mtn / cov) * 0.95)
-      if (dot > 0) blend(i, 255, 255, 255, (dot / cov) * 0.7)
+      if (cloud > 0) blend(i, 255, 255, 255, (cloud / cov) * 0.95)
     }
   }
   return img

@@ -3,7 +3,6 @@ import { NavLink, Outlet, useNavigate, useOutletContext } from 'react-router-dom
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import {
-  Cloud,
   FolderOpen,
   History,
   Link2,
@@ -22,6 +21,7 @@ import { UploadManager } from '../components/UploadManager'
 import { PreviewModal } from '../components/PreviewModal'
 import { LangToggle, ThemeToggle } from '../components/ThemeLang'
 import { SearchBox } from '../components/SearchBox'
+import { Logo } from '../components/Logo'
 
 export type ShellContext = {
   /** 打开预览弹窗；edit: true 直接进入编辑模式 */
@@ -81,9 +81,7 @@ export function AppShell() {
       {/* 侧栏（桌面） */}
       <aside className="hidden w-60 shrink-0 flex-col border-r border-line bg-surface md:flex">
         <div className="flex h-14 items-center gap-2.5 px-5">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-accent text-white">
-            <Cloud size={17} />
-          </div>
+          <Logo size={32} />
           <span className="text-[15px] font-semibold tracking-tight">{t('common.appName')}</span>
         </div>
         <nav className="mt-2 flex-1 space-y-0.5 px-3">
@@ -112,9 +110,7 @@ export function AppShell() {
       <div className="flex min-w-0 flex-1 flex-col">
         <header className="flex h-14 shrink-0 items-center gap-2 border-b border-line bg-surface px-3 md:px-5">
           <div className="flex items-center gap-2 md:hidden">
-            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
-              <Cloud size={15} />
-            </div>
+            <Logo size={28} />
             <span className="text-sm font-semibold">{t('common.appName')}</span>
           </div>
           <div className="hidden flex-1 justify-center md:flex">

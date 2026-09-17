@@ -2,11 +2,12 @@ import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router-dom'
 import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Cloud, Fingerprint, KeyRound } from 'lucide-react'
+import { Fingerprint, KeyRound } from 'lucide-react'
 import { api } from '../lib/api'
 import { useBootstrap } from '../state/auth'
 import { browserSupportsWebAuthn, loginWithPasskey } from '../lib/passkey'
 import { Button, Input, Spinner, cn } from '../components/ui'
+import { Logo } from '../components/Logo'
 
 type FallbackMode = 'none' | 'password' | 'totp' | 'recover'
 
@@ -99,8 +100,8 @@ export function LoginPage() {
     <div className="flex min-h-dvh flex-col items-center justify-center bg-bg px-5 py-10">
       <div className="md-slide-up w-full max-w-sm">
         <div className="mb-8 flex flex-col items-center text-center">
-          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-accent text-white shadow-card">
-            <Cloud size={26} />
+          <div className="mb-4 overflow-hidden rounded-2xl shadow-card">
+            <Logo size={56} />
           </div>
           <h1 className="text-xl font-semibold tracking-tight">{t('auth.loginTitle')}</h1>
           <p className="mt-1.5 text-sm text-muted">{t('auth.loginSubtitle')}</p>

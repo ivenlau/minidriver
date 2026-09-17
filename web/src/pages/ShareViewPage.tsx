@@ -1,11 +1,12 @@
 import { useEffect, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { Cloud, Download, LinkIcon, Lock } from 'lucide-react'
+import { Download, File, LinkIcon, Lock } from 'lucide-react'
 import { api, ApiError } from '../lib/api'
 import type { ShareMeta } from '../lib/types'
 import { formatBytes, formatRelative } from '../lib/format'
 import { Button, Input, Spinner } from '../components/ui'
+import { Logo } from '../components/Logo'
 import { fileKind } from '../components/FileIcon'
 
 /** 公开分享页（无登录）：预览 + 下载，密码门控 */
@@ -79,9 +80,7 @@ export function ShareViewPage() {
   return (
     <div className="flex min-h-dvh flex-col bg-bg">
       <header className="flex h-13 shrink-0 items-center gap-2 border-b border-line bg-surface px-4 py-3">
-        <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-accent text-white">
-          <Cloud size={15} />
-        </div>
+        <Logo size={28} />
         <span className="text-sm font-semibold">{t('common.appName')}</span>
       </header>
 
@@ -132,7 +131,7 @@ export function ShareViewPage() {
             <div className="flex min-h-56 items-center justify-center bg-surface2 md:min-h-80">
               {!previewable ? (
                 <div className="flex flex-col items-center gap-2 p-8 text-muted">
-                  <Cloud size={32} className="opacity-50" />
+                  <File size={32} className="opacity-50" />
                   <p className="text-[13px]">{t('shareView.previewUnavailable')}</p>
                 </div>
               ) : kind === 'image' ? (
