@@ -220,12 +220,10 @@
     "preparingDownload": "Download started…"
   },
   "editor": {
-    "edit": "Edit",
-    "preview": "Preview",
     "save": "Save",
-    "saveHint": "Ctrl+S",
+    "saved": "Saved",
     "unsavedTitle": "Unsaved changes",
-    "unsavedMessage": "Your changes will be lost if you leave. Leave anyway?",
+    "unsavedMessage": "Your changes will be lost if discarded. Discard anyway?",
     "leave": "Discard",
     "loadFailed": "Failed to load content"
   },

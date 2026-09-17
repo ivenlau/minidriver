@@ -18,7 +18,7 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
   const toast = useToast()
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const { openPreview, openEditor } = useShell()
+  const { openPreview } = useShell()
   const [shareNode, setShareNode] = useState<NodeDto | null>(null)
 
   const listQuery = useQuery({
@@ -47,7 +47,7 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
       label: t('files.edit'),
       icon: <Pencil size={15} />,
       hidden: !canEdit(node),
-      onSelect: () => openEditor(node),
+      onSelect: () => openPreview(node, { edit: true }),
     },
     {
       label: t('common.share'),

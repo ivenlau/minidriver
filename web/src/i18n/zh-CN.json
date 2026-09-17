@@ -220,12 +220,10 @@
     "preparingDownload": "开始下载…"
   },
   "editor": {
-    "edit": "编辑",
-    "preview": "预览",
     "save": "保存",
-    "saveHint": "Ctrl+S",
+    "saved": "保存成功",
     "unsavedTitle": "有未保存的更改",
-    "unsavedMessage": "离开将丢失未保存的修改，确认离开？",
+    "unsavedMessage": "放弃将丢失未保存的修改，确认放弃？",
     "leave": "放弃更改",
     "loadFailed": "内容加载失败"
   },

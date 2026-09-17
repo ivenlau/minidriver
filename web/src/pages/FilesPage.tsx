@@ -62,7 +62,7 @@ export function FilesPage() {
   const { folderId } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { openPreview, openEditor } = useShell()
+  const { openPreview } = useShell()
 
   const [sort, setSort] = useState<SortKey>(() => readPref('md.sort', 'updated_at'))
   const [order, setOrder] = useState<'asc' | 'desc'>(() => readPref('md.order', 'desc'))
@@ -250,7 +250,7 @@ export function FilesPage() {
       label: t('files.edit'),
       icon: <Pencil size={15} />,
       hidden: !canEdit(node),
-      onSelect: () => openEditor(node),
+      onSelect: () => openPreview(node, { edit: true }),
     },
     {
       label: t('common.download'),
@@ -482,7 +482,7 @@ export function FilesPage() {
               new TextEncoder().encode(''),
             )
             invalidate()
-            openEditor(created)
+            openPreview(created, { edit: true })
           } catch (err) {
             toast(t(`errors.${err instanceof Error && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'}`), 'error')
           }

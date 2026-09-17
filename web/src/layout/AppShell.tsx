@@ -20,13 +20,12 @@ import { REFRESH_EVENT } from '../lib/upload'
 import { Dropdown, cn } from '../components/ui'
 import { UploadManager } from '../components/UploadManager'
 import { PreviewModal } from '../components/PreviewModal'
-import { MarkdownEditor } from '../components/MarkdownEditor'
 import { LangToggle, ThemeToggle } from '../components/ThemeLang'
 import { SearchBox } from '../components/SearchBox'
 
 export type ShellContext = {
-  openPreview: (node: NodeDto) => void
-  openEditor: (node: NodeDto) => void
+  /** 打开预览弹窗；edit: true 直接进入编辑模式 */
+  openPreview: (node: NodeDto, opts?: { edit?: boolean }) => void
 }
 
 export function useShell(): ShellContext {
@@ -45,8 +44,8 @@ export function AppShell() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const qc = useQueryClient()
-  const [preview, setPreview] = useState<NodeDto | null>(null)
-  const [editorNode, setEditorNode] = useState<NodeDto | null>(null)
+  const [previewNode, setPreviewNode] = useState<NodeDto | null>(null)
+  const [previewEdit, setPreviewEdit] = useState(false)
 
   useEffect(() => {
     const refresh = () => {
@@ -64,8 +63,18 @@ export function AppShell() {
     navigate('/login', { replace: true })
   }
 
-  const openPreview = (node: NodeDto) => setPreview(node)
-  const openEditor = (node: NodeDto) => setEditorNode(node)
+  const openPreview = (node: NodeDto, opts?: { edit?: boolean }) => {
+    setPreviewNode(node)
+    setPreviewEdit(!!opts?.edit)
+  }
+  const closePreview = () => {
+    setPreviewNode(null)
+    setPreviewEdit(false)
+    // 编辑可能改动了内容大小/时间
+    for (const key of ['nodes', 'recent', 'starred']) {
+      void qc.invalidateQueries({ queryKey: [key] })
+    }
+  }
 
   return (
     <div className="flex h-dvh bg-bg text-text">
@@ -137,7 +146,7 @@ export function AppShell() {
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-20 md:pb-0">
-          <Outlet context={{ openPreview, openEditor } satisfies ShellContext} />
+          <Outlet context={{ openPreview } satisfies ShellContext} />
         </main>
 
         {/* 底部导航（移动） */}
@@ -161,25 +170,7 @@ export function AppShell() {
       </div>
 
       <UploadManager />
-      <PreviewModal
-        node={preview}
-        onClose={() => setPreview(null)}
-        onEdit={(n) => {
-          setPreview(null)
-          setEditorNode(n)
-        }}
-      />
-      {editorNode && (
-        <MarkdownEditor
-          node={editorNode}
-          onClose={() => {
-            setEditorNode(null)
-            for (const key of ['nodes', 'recent', 'starred']) {
-              void qc.invalidateQueries({ queryKey: [key] })
-            }
-          }}
-        />
-      )}
+      <PreviewModal node={previewNode} startInEdit={previewEdit} onClose={closePreview} />
     </div>
   )
 }
