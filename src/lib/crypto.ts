@@ -68,7 +68,10 @@ export async function readSignedValue<T>(
 
 // ---------- PBKDF2 密码哈希 ----------
 
-const PBKDF2_ITERATIONS = 600_000
+// ⚠️ 生产 workerd 对 PBKDF2 迭代数有 100,000 次硬上限（超过直接 NotSupportedError）。
+// 取上限值；密码仅作为 Passkey 的备用通道，配合失败锁定（5 次锁 15 分钟）足以兜底。
+// 哈希格式为 pbkdf2$<iterations>$<salt>$<hash>，迭代数随哈希存储，未来可平滑调整。
+const PBKDF2_ITERATIONS = 100_000
 
 export async function hashPassword(password: string): Promise<string> {
   const salt = base64urlDecode(randomToken(16))
