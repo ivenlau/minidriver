@@ -16,7 +16,9 @@
     {
       "binding": "DB",
       "database_name": "minidriver",
-      "database_id": "REDACTED-D1-DATABASE-ID",
+      // 占位符：真实 ID 由 CI 部署时经 scripts/resolve-config.mjs 注入（GitHub Secret D1_DATABASE_ID）。
+      // 本地开发不校验真实 ID；该文件不应包含任何个人基础设施信息
+      "database_id": "LOCAL_DEV_ONLY",
       "migrations_dir": "migrations"
     }
   ],
@@ -24,9 +26,9 @@
     "crons": ["17 3 * * *"]
   },
   "vars": {
-    // 规范对外地址（分享链接 + Passkey RP ID）。留空 = 自动使用访问时的域名（单域名零配置）。
-    // 绑定了多个域名（如自定义域 + workers.dev）时必须填主域名，否则 Passkey 不能跨域互通。
-    "APP_PUBLIC_URL": "https://yourdomain.com",
+    // APP_PUBLIC_URL（规范对外地址：分享链接 + Passkey RP ID）不放这里 ——
+    // 它以 Cloudflare Secret 形式在 dashboard 设置一次，部署永不覆盖，代码零痕迹。
+    // 本地开发在 .dev.vars 里配置；留空时运行时自动回退到请求来源（单域名零配置）。
     // 允许的来源（逗号分隔）。不填则默认为 APP_PUBLIC_URL（或请求来源）
     "ALLOWED_ORIGINS": ""
   },

@@ -9,7 +9,7 @@
     "dev:api": "node scripts/ensure-dist.mjs && wrangler dev",
     "dev:web": "vite dev",
     "build": "vite build",
-    "deploy": "npm run build && wrangler deploy",
+    "deploy": "npm run build && node scripts/resolve-config.mjs && wrangler deploy",
     "typecheck": "tsc -p tsconfig.worker.json --noEmit && tsc -p tsconfig.web.json --noEmit",
     "db:migrate:local": "wrangler d1 migrations apply minidriver --local",
     "db:migrate:remote": "wrangler d1 migrations apply minidriver --remote",
