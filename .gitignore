@@ -7,8 +7,10 @@ dist/
 # ---- 密钥与环境（绝不提交）----
 .dev.vars
 .dev.vars.*
+!.dev.vars.example
 .env
 .env.*
+!.env.example
 *.local
 
 # ---- Wrangler 本地状态（含本地 D1 数据与 R2 上传的文件内容）----

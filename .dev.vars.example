@@ -1,0 +1,7 @@
+# 复制为 .dev.vars（已被 gitignore）供本地 wrangler dev 使用
+# SESSION_ENC_KEY: 32 字节随机数的 base64，可用以下命令生成：
+#   node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
+SESSION_ENC_KEY=BASE64_OF_32_RANDOM_BYTES
+SETUP_TOKEN=dev-setup-token
+APP_PUBLIC_URL=http://localhost:5173
+ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173,http://localhost:8787
