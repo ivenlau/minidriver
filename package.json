@@ -5,8 +5,8 @@
   "type": "module",
   "description": "Personal cloud drive on Cloudflare Workers — passkey auth, file management, temporary shares",
   "scripts": {
-    "dev": "concurrently -c yellow,cyan -n api,web \"wrangler dev\" \"vite dev\"",
-    "dev:api": "wrangler dev",
+    "dev": "concurrently -c yellow,cyan -n api,web \"node scripts/ensure-dist.mjs && wrangler dev\" \"vite dev\"",
+    "dev:api": "node scripts/ensure-dist.mjs && wrangler dev",
     "dev:web": "vite dev",
     "build": "vite build",
     "deploy": "npm run build && wrangler deploy",
