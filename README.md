@@ -6,7 +6,7 @@
 
 - **Passkey 登录**：指纹 / 面容一次验证直达，密码 + TOTP + 一次性恢复码兜底
 - **临时分享**：限时限次限密码的链接，访客免登录在线预览（图片 / 视频 / 音频 / PDF / 文本），可吊销可删除
-- **文件管理**：分块上传断点续传、Range 流式播放、目录树、搜索、星标、回收站
+- **文件管理**：分块上传断点续传、Range 流式播放、目录树、搜索、星标、回收站、Markdown / TXT 在线编辑与实时预览
 - **中英双语 · 亮暗主题 · 桌面 / 移动自适应**
 
 技术栈：Cloudflare Workers（Hono）+ R2 + D1 + React 19，架构细节见 [DESIGN.md](./DESIGN.md)。
@@ -24,7 +24,7 @@ npm run dev                           # wrangler dev(8787, API) + vite dev(5173,
 
 打开 http://localhost:5173 → `/setup` → 输入 `.dev.vars` 里的 `SETUP_TOKEN`（默认 `dev-setup-token`）→ 注册 Passkey → 保存恢复码。
 
-> 无浏览器时可跑 API 冒烟测试（内置伪造认证器，66 项断言）：`npm run dev:api` + `npm run smoke`。
+> 无浏览器时可跑 API 冒烟测试（内置伪造认证器，69 项断言）：`npm run dev:api` + `npm run smoke`。
 
 ---
 

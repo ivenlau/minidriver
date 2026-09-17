@@ -37,7 +37,7 @@ async function request(method: string, path: string, body?: unknown): Promise<un
   return handle(res)
 }
 
-async function rawBody(method: string, path: string, body: Blob | ArrayBuffer): Promise<unknown> {
+async function rawBody(method: string, path: string, body: Blob | ArrayBuffer | ArrayBufferView<ArrayBuffer>): Promise<unknown> {
   const res = await fetch(path, {
     method,
     credentials: 'same-origin',
@@ -53,7 +53,7 @@ export const api = {
   put: <T>(path: string, body?: unknown) => request('PUT', path, body) as Promise<T>,
   patch: <T>(path: string, body?: unknown) => request('PATCH', path, body) as Promise<T>,
   del: <T>(path: string, body?: unknown) => request('DELETE', path, body) as Promise<T>,
-  send: <T>(method: 'PUT' | 'POST', path: string, body: Blob | ArrayBuffer) =>
+  send: <T>(method: 'PUT' | 'POST', path: string, body: Blob | ArrayBuffer | ArrayBufferView<ArrayBuffer>) =>
     rawBody(method, path, body) as Promise<T>,
 }
 

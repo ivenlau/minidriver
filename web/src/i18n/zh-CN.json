@@ -61,6 +61,10 @@
     "items_other": "{{count}} 项",
     "selected_one": "已选 {{count}} 项",
     "selected_other": "已选 {{count}} 项",
+    "newMarkdown": "新建 Markdown",
+    "newText": "新建文本文档",
+    "newTextName": "文档名称",
+    "edit": "编辑",
     "newFolderTitle": "新建文件夹",
     "renameTitle": "重命名",
     "moveTitle": "移动到…",
@@ -215,6 +219,16 @@
     "previewUnavailable": "该文件类型不支持在线预览",
     "preparingDownload": "开始下载…"
   },
+  "editor": {
+    "edit": "编辑",
+    "preview": "预览",
+    "save": "保存",
+    "saveHint": "Ctrl+S",
+    "unsavedTitle": "有未保存的更改",
+    "unsavedMessage": "离开将丢失未保存的修改，确认离开？",
+    "leave": "放弃更改",
+    "loadFailed": "内容加载失败"
+  },
   "errors": {
     "REQUEST_FAILED": "请求失败，请重试",
     "NETWORK": "网络异常，请检查连接",
@@ -237,6 +251,7 @@
     "UPLOAD_NOT_OPEN": "上传已结束，无法继续",
     "UPLOAD_NOT_COMPLETE": "请先完成上传",
     "TOO_LARGE_FOR_FAST_PATH": "文件过大，请使用分块上传",
+    "CONTENT_TOO_LARGE": "文本超过 1MB，仅支持预览与下载",
     "THUMB_TOO_LARGE": "缩略图过大",
     "AUTH_REQUIRED": "请先登录",
     "BAD_CREDENTIALS": "账号或密码错误",

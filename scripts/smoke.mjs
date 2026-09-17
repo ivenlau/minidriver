@@ -418,6 +418,23 @@ async function main() {
     check('存储统计正确', storage.json?.used === expected, `got ${storage.json?.used}, want ${expected}`)
   }
 
+  // 文本内容更新（Markdown 编辑器保存链路）
+  {
+    const mdText = '# hello markdown\n\n- item 1\n- item 2\n'
+    const upd = await call('PUT', `/api/nodes/${helloId}/content`, {
+      raw: true,
+      body: new TextEncoder().encode(mdText),
+    })
+    check('更新文本内容', upd.res.status === 200 && upd.json?.size === mdText.length, JSON.stringify(upd.json))
+    const read = await fetch(`${BASE}/api/nodes/${helloId}/content`, { headers: { cookie: jar.header() } })
+    check('读回内容一致', (await read.text()) === mdText)
+    const tooBig = await call('PUT', `/api/nodes/${helloId}/content`, {
+      raw: true,
+      body: new TextEncoder().encode('x'.repeat(1024 * 1024 + 1)),
+    })
+    check('超 1MB 内容 → 400', tooBig.res.status === 400 && tooBig.json?.error?.code === 'CONTENT_TOO_LARGE', JSON.stringify(tooBig.json))
+  }
+
   // 分享：密码 + 公开访问 + 吊销
   let shareUrl, shareToken
   {

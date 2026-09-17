@@ -260,6 +260,22 @@ async function uniqueNameForRestore(
 
 // ---------------------------------------------------------------- 内容 / 缩略图
 
+/** 文本内容更新（编辑器保存）：仅小文本，覆盖写 R2 */
+const MAX_TEXT_CONTENT = 1024 * 1024
+
+nodes.put('/nodes/:id/content', async (c) => {
+  const node = await requireNode(c.env.DB, c.req.param('id'))
+  if (node.deleted_at) throw Errors.notFound('NODE_NOT_FOUND')
+  if (node.type !== 'file' || !node.r2_key) throw Errors.badRequest('NOT_A_FILE')
+  const buf = await c.req.arrayBuffer()
+  if (buf.byteLength > MAX_TEXT_CONTENT) throw Errors.badRequest('CONTENT_TOO_LARGE')
+  await c.env.R2.put(node.r2_key, buf, { httpMetadata: { contentType: node.mime ?? 'text/plain' } })
+  await c.env.DB.prepare('UPDATE nodes SET size = ?, updated_at = ? WHERE id = ?')
+    .bind(buf.byteLength, Date.now(), node.id)
+    .run()
+  return c.json(toNodeDto(await requireNode(c.env.DB, node.id)))
+})
+
 nodes.get('/nodes/:id/content', async (c) => {
   const node = await requireNode(c.env.DB, c.req.param('id'))
   if (node.deleted_at) throw Errors.notFound('NODE_NOT_FOUND')

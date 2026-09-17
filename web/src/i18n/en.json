@@ -61,6 +61,10 @@
     "items_other": "{{count}} items",
     "selected_one": "{{count}} selected",
     "selected_other": "{{count}} selected",
+    "newMarkdown": "New Markdown",
+    "newText": "New text file",
+    "newTextName": "File name",
+    "edit": "Edit",
     "newFolderTitle": "New folder",
     "renameTitle": "Rename",
     "moveTitle": "Move to…",
@@ -215,6 +219,16 @@
     "previewUnavailable": "Preview is not available for this file type",
     "preparingDownload": "Download started…"
   },
+  "editor": {
+    "edit": "Edit",
+    "preview": "Preview",
+    "save": "Save",
+    "saveHint": "Ctrl+S",
+    "unsavedTitle": "Unsaved changes",
+    "unsavedMessage": "Your changes will be lost if you leave. Leave anyway?",
+    "leave": "Discard",
+    "loadFailed": "Failed to load content"
+  },
   "errors": {
     "REQUEST_FAILED": "Request failed, please try again",
     "NETWORK": "Network error, check your connection",
@@ -237,6 +251,7 @@
     "UPLOAD_NOT_OPEN": "Upload already finished",
     "UPLOAD_NOT_COMPLETE": "Finish the upload first",
     "TOO_LARGE_FOR_FAST_PATH": "File too large for direct upload",
+    "CONTENT_TOO_LARGE": "Text exceeds 1 MB — preview and download only",
     "THUMB_TOO_LARGE": "Thumbnail too large",
     "AUTH_REQUIRED": "Please sign in first",
     "BAD_CREDENTIALS": "Incorrect credentials",

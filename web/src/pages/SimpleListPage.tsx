@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Clock, Star } from 'lucide-react'
+import { Clock, Pencil, Star } from 'lucide-react'
 import { api } from '../lib/api'
 import type { NodeDto } from '../lib/types'
 import { useShell } from '../layout/AppShell'
 import { NodeRow } from './FilesPage'
+import { canEdit } from '../components/MarkdownEditor'
 import { ShareDialog } from '../components/ShareDialog'
 import { EmptyState, SkeletonList, type MenuItem } from '../components/ui'
 import { useToast } from '../state/toast'
@@ -17,7 +18,7 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
   const toast = useToast()
   const qc = useQueryClient()
   const navigate = useNavigate()
-  const { openPreview } = useShell()
+  const { openPreview, openEditor } = useShell()
   const [shareNode, setShareNode] = useState<NodeDto | null>(null)
 
   const listQuery = useQuery({
@@ -42,6 +43,12 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
 
   const menuFor = (node: NodeDto): MenuItem[] => [
     { label: t('common.open'), onSelect: () => openNode(node) },
+    {
+      label: t('files.edit'),
+      icon: <Pencil size={15} />,
+      hidden: !canEdit(node),
+      onSelect: () => openEditor(node),
+    },
     {
       label: t('common.share'),
       hidden: node.type !== 'file',

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { Download } from 'lucide-react'
+import { Download, Pencil } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { fetchTextPreview } from '../lib/api'
 import type { NodeDto } from '../lib/types'
@@ -8,7 +8,15 @@ import { Modal, Button, Spinner } from './ui'
 import { fileKind } from './FileIcon'
 
 /** 全屏文件预览：图片 / 视频 / 音频 / PDF / 文本 */
-export function PreviewModal({ node, onClose }: { node: NodeDto | null; onClose: () => void }) {
+export function PreviewModal({
+  node,
+  onClose,
+  onEdit,
+}: {
+  node: NodeDto | null
+  onClose: () => void
+  onEdit?: (node: NodeDto) => void
+}) {
   const { t, i18n } = useTranslation()
   const [text, setText] = useState<string | null>(null)
   const [loading, setLoading] = useState(false)
@@ -66,12 +74,20 @@ export function PreviewModal({ node, onClose }: { node: NodeDto | null; onClose:
           <span className="text-[13px] text-muted">
             {formatBytes(node.size)} · {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(node.updatedAt))}
           </span>
-          <a href={downloadUrl} className="inline-flex">
-            <Button variant="primary" size="sm">
-              <Download size={15} />
-              {t('common.download')}
-            </Button>
-          </a>
+          <div className="flex shrink-0 gap-2">
+            {onEdit && kind === 'text' && (
+              <Button size="sm" onClick={() => onEdit(node)}>
+                <Pencil size={15} />
+                {t('files.edit')}
+              </Button>
+            )}
+            <a href={downloadUrl} className="inline-flex">
+              <Button variant="primary" size="sm">
+                <Download size={15} />
+                {t('common.download')}
+              </Button>
+            </a>
+          </div>
         </div>
       </div>
     </Modal>

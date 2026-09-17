@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@plugin '@tailwindcss/typography';
 
 /* class/data-theme 双保险的暗色变体（组件主要用语义 token，dark: 很少用到） */
 @custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));

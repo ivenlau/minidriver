@@ -6,6 +6,7 @@ import {
   ChevronRight,
   CloudUpload,
   Download,
+  FilePlus,
   FolderPlus,
   Grid2x2,
   ArrowUpDown,
@@ -25,6 +26,7 @@ import { formatBytes, formatRelative } from '../lib/format'
 import { useShell } from '../layout/AppShell'
 import { uploads } from '../lib/upload'
 import { FileIcon, fileKind } from '../components/FileIcon'
+import { canEdit } from '../components/MarkdownEditor'
 import { ShareDialog } from '../components/ShareDialog'
 import { MoveDialog } from '../components/MoveDialog'
 import {
@@ -60,7 +62,7 @@ export function FilesPage() {
   const { folderId } = useParams()
   const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
-  const { openPreview } = useShell()
+  const { openPreview, openEditor } = useShell()
 
   const [sort, setSort] = useState<SortKey>(() => readPref('md.sort', 'updated_at'))
   const [order, setOrder] = useState<'asc' | 'desc'>(() => readPref('md.order', 'desc'))
@@ -73,6 +75,7 @@ export function FilesPage() {
   const [renameNode, setRenameNode] = useState<NodeDto | null>(null)
   const [newFolderOpen, setNewFolderOpen] = useState(false)
   const [confirmDelete, setConfirmDelete] = useState<NodeDto[] | null>(null)
+  const [newTextKind, setNewTextKind] = useState<'text/markdown' | 'text/plain' | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const parentParam = folderId ?? 'root'
@@ -244,6 +247,12 @@ export function FilesPage() {
       onSelect: () => openNode(node),
     },
     {
+      label: t('files.edit'),
+      icon: <Pencil size={15} />,
+      hidden: !canEdit(node),
+      onSelect: () => openEditor(node),
+    },
+    {
       label: t('common.download'),
       icon: <Download size={15} />,
       hidden: node.type !== 'file',
@@ -311,6 +320,18 @@ export function FilesPage() {
           <Button variant="ghost" size="icon" title={t('files.newFolder')} onClick={() => setNewFolderOpen(true)}>
             <FolderPlus size={17} />
           </Button>
+          <Dropdown
+            align="right"
+            trigger={
+              <Button variant="ghost" size="icon" title={t('files.newText')}>
+                <FilePlus size={17} />
+              </Button>
+            }
+            items={[
+              { label: t('files.newMarkdown'), onSelect: () => setNewTextKind('text/markdown') },
+              { label: t('files.newText'), onSelect: () => setNewTextKind('text/plain') },
+            ]}
+          />
           <Button variant="primary" size="sm" onClick={() => fileInputRef.current?.click()}>
             <Upload size={15} />
             <span className="hidden sm:inline">{t('files.upload')}</span>
@@ -443,6 +464,30 @@ export function FilesPage() {
           }}
         />
       )}
+      <PromptDialog
+        open={newTextKind !== null}
+        title={newTextKind === 'text/markdown' ? t('files.newMarkdown') : t('files.newText')}
+        label={t('files.newTextName')}
+        placeholder={newTextKind === 'text/markdown' ? 'note.md' : 'note.txt'}
+        confirmLabel={t('common.confirm')}
+        onClose={() => setNewTextKind(null)}
+        onConfirm={async (name) => {
+          if (!newTextKind) return
+          const ext = newTextKind === 'text/markdown' ? '.md' : '.txt'
+          const fullName = name.includes('.') ? name : `${name}${ext}`
+          try {
+            const created = await api.send<NodeDto>(
+              'POST',
+              `/api/files/fast?name=${encodeURIComponent(fullName)}&mime=${newTextKind}${folderId ? `&parentId=${folderId}` : ''}`,
+              new TextEncoder().encode(''),
+            )
+            invalidate()
+            openEditor(created)
+          } catch (err) {
+            toast(t(`errors.${err instanceof Error && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'}`), 'error')
+          }
+        }}
+      />
       <PromptDialog
         open={newFolderOpen}
         title={t('files.newFolderTitle')}

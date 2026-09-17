@@ -20,10 +20,14 @@ import { REFRESH_EVENT } from '../lib/upload'
 import { Dropdown, cn } from '../components/ui'
 import { UploadManager } from '../components/UploadManager'
 import { PreviewModal } from '../components/PreviewModal'
+import { MarkdownEditor } from '../components/MarkdownEditor'
 import { LangToggle, ThemeToggle } from '../components/ThemeLang'
 import { SearchBox } from '../components/SearchBox'
 
-export type ShellContext = { openPreview: (node: NodeDto) => void }
+export type ShellContext = {
+  openPreview: (node: NodeDto) => void
+  openEditor: (node: NodeDto) => void
+}
 
 export function useShell(): ShellContext {
   return useOutletContext<ShellContext>()
@@ -42,6 +46,7 @@ export function AppShell() {
   const navigate = useNavigate()
   const qc = useQueryClient()
   const [preview, setPreview] = useState<NodeDto | null>(null)
+  const [editorNode, setEditorNode] = useState<NodeDto | null>(null)
 
   useEffect(() => {
     const refresh = () => {
@@ -60,6 +65,7 @@ export function AppShell() {
   }
 
   const openPreview = (node: NodeDto) => setPreview(node)
+  const openEditor = (node: NodeDto) => setEditorNode(node)
 
   return (
     <div className="flex h-dvh bg-bg text-text">
@@ -131,7 +137,7 @@ export function AppShell() {
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto pb-20 md:pb-0">
-          <Outlet context={{ openPreview } satisfies ShellContext} />
+          <Outlet context={{ openPreview, openEditor } satisfies ShellContext} />
         </main>
 
         {/* 底部导航（移动） */}
@@ -155,7 +161,25 @@ export function AppShell() {
       </div>
 
       <UploadManager />
-      <PreviewModal node={preview} onClose={() => setPreview(null)} />
+      <PreviewModal
+        node={preview}
+        onClose={() => setPreview(null)}
+        onEdit={(n) => {
+          setPreview(null)
+          setEditorNode(n)
+        }}
+      />
+      {editorNode && (
+        <MarkdownEditor
+          node={editorNode}
+          onClose={() => {
+            setEditorNode(null)
+            for (const key of ['nodes', 'recent', 'starred']) {
+              void qc.invalidateQueries({ queryKey: [key] })
+            }
+          }}
+        />
+      )}
     </div>
   )
 }
