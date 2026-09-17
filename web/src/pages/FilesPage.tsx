@@ -23,10 +23,12 @@ import {
 import { api } from '../lib/api'
 import type { NodeDto, NodeList } from '../lib/types'
 import { formatBytes, formatRelative } from '../lib/format'
+import { downloadNodes } from '../lib/download'
 import { useShell } from '../layout/AppShell'
 import { uploads } from '../lib/upload'
 import { FileIcon, fileKind } from '../components/FileIcon'
 import { canEdit } from '../components/MarkdownEditor'
+import { BatchBar } from '../components/BatchBar'
 import { ShareDialog } from '../components/ShareDialog'
 import { MoveDialog } from '../components/MoveDialog'
 import {
@@ -160,17 +162,7 @@ export function FilesPage() {
   }
 
   const download = (nodes: NodeDto[]) => {
-    const files = nodes.filter((n) => n.type === 'file')
-    files.forEach((f, i) => {
-      setTimeout(() => {
-        const a = document.createElement('a')
-        a.href = `/api/nodes/${f.id}/content?dl=1`
-        a.download = f.name
-        document.body.appendChild(a)
-        a.click()
-        a.remove()
-      }, i * 400)
-    })
+    downloadNodes(nodes.filter((n) => n.type === 'file'))
   }
 
   const starMutation = useMutation({
@@ -399,8 +391,7 @@ export function FilesPage() {
 
       {/* 批量操作栏 */}
       {selected.size > 0 && (
-        <div className="md-slide-up fixed inset-x-0 bottom-[calc(4rem_+_env(safe-area-inset-bottom)_+_0.5rem)] z-30 mx-auto flex w-fit items-center gap-1.5 rounded-2xl border border-line bg-surface/95 px-2.5 py-2 shadow-pop backdrop-blur md:bottom-6">
-          <span className="px-2 text-[13px] font-medium text-muted">{t('files.selected', { count: selected.size })}</span>
+        <BatchBar label={t('files.selected', { count: selected.size })} onClear={() => setSelected(new Set())}>
           <Button variant="ghost" size="icon" title={t('common.download')} onClick={() => download(selectedNodes)}>
             <Download size={17} />
           </Button>
@@ -416,11 +407,7 @@ export function FilesPage() {
           >
             <Trash2 size={17} />
           </Button>
-          <div className="mx-1 h-5 w-px bg-line" />
-          <Button variant="ghost" size="sm" onClick={() => setSelected(new Set())}>
-            {t('common.clear')}
-          </Button>
-        </div>
+        </BatchBar>
       )}
 
       {/* 拖放遮罩 */}

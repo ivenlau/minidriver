@@ -131,6 +131,7 @@
     "emptyTrash": "清空回收站",
     "emptyTrashConfirm": "将永久删除回收站中的所有文件，此操作不可恢复。确认继续？",
     "hardDeleteConfirm": "将永久删除“{{name}}”，此操作不可恢复。确认继续？",
+    "hardDeleteBatch": "将永久删除所选 {{count}} 项，此操作不可恢复。确认继续？",
     "restored": "已恢复"
   },
   "settings": {

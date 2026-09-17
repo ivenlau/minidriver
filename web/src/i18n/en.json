@@ -131,6 +131,7 @@
     "emptyTrash": "Empty trash",
     "emptyTrashConfirm": "Everything in trash will be deleted permanently. Continue?",
     "hardDeleteConfirm": "“{{name}}” will be deleted permanently. Continue?",
+    "hardDeleteBatch": "{{count}} selected items will be deleted permanently. Continue?",
     "restored": "Restored"
   },
   "settings": {
