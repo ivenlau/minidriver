@@ -16,7 +16,7 @@
     {
       "binding": "DB",
       "database_name": "minidriver",
-      "database_id": "REPLACE_WITH_YOUR_D1_DATABASE_ID",
+      "database_id": "REDACTED-D1-DATABASE-ID",
       "migrations_dir": "migrations"
     }
   ],
