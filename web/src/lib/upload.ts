@@ -14,6 +14,10 @@ export interface UploadItem {
   loaded: number
   status: UploadStatus
   error?: string
+  /** 传输速度（字节/秒，EMA 平滑） */
+  speed?: number
+  lastLoaded?: number
+  lastAt?: number
 }
 
 const CHUNK_SIZE = 8 * 1024 * 1024
@@ -65,7 +69,29 @@ class UploadStore {
     if (item && item.status === 'error') {
       item.status = 'queued'
       item.loaded = 0
+      item.speed = undefined
+      item.lastAt = undefined
+      item.lastLoaded = undefined
       item.error = undefined
+      this.emit()
+      this.pump()
+    }
+  }
+
+  retryAllFailed(): void {
+    let any = false
+    for (const item of this.items) {
+      if (item.status === 'error') {
+        item.status = 'queued'
+        item.loaded = 0
+        item.speed = undefined
+        item.lastAt = undefined
+        item.lastLoaded = undefined
+        item.error = undefined
+        any = true
+      }
+    }
+    if (any) {
       this.emit()
       this.pump()
     }
@@ -159,6 +185,7 @@ class UploadStore {
           parts.push({ partNumber: idx + 1, etag: r.etag })
           completed++
           item.loaded = Math.min(completed * CHUNK_SIZE, item.size)
+          updateSpeed(item)
           this.emit()
           return
         } catch (err) {
@@ -189,6 +216,17 @@ function autoRename(name: string, n: number): string {
   const base = dot > 0 ? name.slice(0, dot) : name
   const ext = dot > 0 ? name.slice(dot) : ''
   return `${base} (${n})${ext}`
+}
+
+/** 分块完成时更新 EMA 平滑速度 */
+function updateSpeed(item: UploadItem): void {
+  const now = Date.now()
+  if (item.lastAt && now > item.lastAt) {
+    const inst = ((item.loaded - (item.lastLoaded ?? 0)) * 1000) / (now - item.lastAt)
+    item.speed = item.speed ? Math.round(item.speed * 0.7 + inst * 0.3) : Math.round(inst)
+  }
+  item.lastLoaded = item.loaded
+  item.lastAt = now
 }
 
 export const uploads = new UploadStore()

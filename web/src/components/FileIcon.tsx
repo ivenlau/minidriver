@@ -1,5 +1,6 @@
 import { FileArchive, FileText, File, Film, Folder, Image as ImageIcon, Music } from 'lucide-react'
 import type { NodeDto } from '../lib/types'
+import { cn } from './ui'
 
 export type FileKind = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'archive' | 'other'
 
@@ -30,6 +31,16 @@ const KIND_STYLE: Record<FileKind, { icon: typeof File; className: string }> = {
   text: { icon: FileText, className: 'text-sky-500 bg-sky-500/10' },
   archive: { icon: FileArchive, className: 'text-orange-500 bg-orange-500/10' },
   other: { icon: File, className: 'text-muted bg-surface2' },
+}
+
+/** 独立的类型图标块（上传队列等无 NodeDto 的场景复用配色） */
+export function KindIcon({ kind, className }: { kind: FileKind; className?: string }) {
+  const { icon: Icon, className: kc } = KIND_STYLE[kind]
+  return (
+    <div className={cn('flex h-7 w-7 shrink-0 items-center justify-center rounded-lg', kc, className)}>
+      <Icon size={15} />
+    </div>
+  )
 }
 
 /** 列表/网格中的文件图标或缩略图 */

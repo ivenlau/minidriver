@@ -399,7 +399,7 @@ export function FilesPage() {
 
       {/* 批量操作栏 */}
       {selected.size > 0 && (
-        <div className="md-slide-up fixed inset-x-0 bottom-[72px] z-30 mx-auto flex w-fit items-center gap-1.5 rounded-2xl border border-line bg-surface/95 px-2.5 py-2 shadow-pop backdrop-blur md:bottom-6">
+        <div className="md-slide-up fixed inset-x-0 bottom-[calc(4rem_+_env(safe-area-inset-bottom)_+_0.5rem)] z-30 mx-auto flex w-fit items-center gap-1.5 rounded-2xl border border-line bg-surface/95 px-2.5 py-2 shadow-pop backdrop-blur md:bottom-6">
           <span className="px-2 text-[13px] font-medium text-muted">{t('files.selected', { count: selected.size })}</span>
           <Button variant="ghost" size="icon" title={t('common.download')} onClick={() => download(selectedNodes)}>
             <Download size={17} />
