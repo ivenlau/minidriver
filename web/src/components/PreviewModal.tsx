@@ -43,11 +43,12 @@ export function PreviewModal({
   const downloadUrl = `${contentUrl}?dl=1`
 
   return (
-    <Modal open onClose={onClose} wide fullHeight title={node.name}>
-      <div className="flex flex-col gap-4">
+    <Modal open onClose={onClose} wide pinnedFooter title={node.name}>
+      {/* 内容区：弹窗高度随内容自适应，超出上限时仅这里滚动 */}
+      <div className="min-h-0 flex-1 overflow-y-auto px-5 pb-3 sm:px-6">
         {/* 文本类：全宽正常排版（md 渲染 / 其余原文左对齐），不做居中灰盒 */}
         {kind === 'text' ? (
-          <div className="min-h-40 overflow-hidden rounded-xl bg-surface2">
+          <div className="overflow-hidden">
             {failed && <p className="p-8 text-sm text-muted">{t('preview.loadFailed')}</p>}
             {loading && (
               <div className="flex w-full justify-center p-8">
@@ -55,7 +56,7 @@ export function PreviewModal({
               </div>
             )}
             {!failed && !loading && md && (
-              <article className="prose prose-sm dark:prose-invert max-w-none bg-surface p-4 md:prose-base">
+              <article className="prose prose-sm dark:prose-invert max-w-none md:prose-base">
                 <ReactMarkdown
                   remarkPlugins={[remarkGfm]}
                   components={{ a: ({ node: n, ...rest }) => <a {...rest} target="_blank" rel="noreferrer" /> }}
@@ -65,7 +66,7 @@ export function PreviewModal({
               </article>
             )}
             {!failed && !loading && !md && (
-              <pre className="overflow-x-auto p-4 text-left font-mono text-[13px] leading-relaxed whitespace-pre-wrap break-words text-text">
+              <pre className="text-left font-mono text-[13px] leading-relaxed whitespace-pre-wrap break-words text-text">
                 {text ?? ''}
               </pre>
             )}
@@ -93,24 +94,25 @@ export function PreviewModal({
             )}
           </div>
         )}
-        <div className="flex items-center justify-between gap-3">
-          <span className="text-[13px] text-muted">
-            {formatBytes(node.size)} · {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(node.updatedAt))}
-          </span>
-          <div className="flex shrink-0 gap-2">
-            {onEdit && kind === 'text' && (
-              <Button size="sm" onClick={() => onEdit(node)}>
-                <Pencil size={15} />
-                {t('files.edit')}
-              </Button>
-            )}
-            <a href={downloadUrl} className="inline-flex">
-              <Button variant="primary" size="sm">
-                <Download size={15} />
-                {t('common.download')}
-              </Button>
-            </a>
-          </div>
+      </div>
+      {/* 底栏：始终钉在底部 */}
+      <div className="flex shrink-0 items-center justify-between gap-3 border-t border-line px-5 pt-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] sm:px-6">
+        <span className="min-w-0 truncate text-[13px] text-muted">
+          {formatBytes(node.size)} · {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(node.updatedAt))}
+        </span>
+        <div className="flex shrink-0 gap-2">
+          {onEdit && kind === 'text' && (
+            <Button size="sm" onClick={() => onEdit(node)}>
+              <Pencil size={15} />
+              {t('files.edit')}
+            </Button>
+          )}
+          <a href={downloadUrl} className="inline-flex">
+            <Button variant="primary" size="sm">
+              <Download size={15} />
+              {t('common.download')}
+            </Button>
+          </a>
         </div>
       </div>
     </Modal>
