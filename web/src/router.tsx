@@ -12,9 +12,10 @@ import { ShareViewPage } from './pages/ShareViewPage'
 import { Splash } from './components/ui'
 
 function SplashRedirect({ children }: { children: React.ReactNode }) {
-  const { data, isLoading } = useBootstrap()
+  const { data, isLoading, isFetching } = useBootstrap()
   const location = useLocation()
-  if (isLoading) return <Splash />
+  // 缓存是登录前的旧数据且正在重取时，先展示 Splash 而不是误判未登录弹回登录页
+  if (isLoading || (isFetching && !data?.me)) return <Splash />
   if (!data?.initialized) return <Navigate to="/setup" replace />
   if (!data.me) return <Navigate to="/login" state={{ from: location.pathname }} replace />
   return <>{children}</>

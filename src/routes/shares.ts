@@ -147,8 +147,16 @@ shares.patch('/shares/:id', async (c) => {
 })
 
 shares.delete('/shares/:id', async (c) => {
-  const row = await c.env.DB.prepare('SELECT id FROM shares WHERE id = ?').bind(c.req.param('id')).first()
+  const id = c.req.param('id')
+  // ?purge=1 彻底删除分享记录（过期/已达上限/已吊销的记录清理用）
+  if (c.req.query('purge') === '1') {
+    const row = await c.env.DB.prepare('SELECT id FROM shares WHERE id = ?').bind(id).first()
+    if (!row) throw Errors.notFound('SHARE_NOT_FOUND')
+    await c.env.DB.prepare('DELETE FROM shares WHERE id = ?').bind(id).run()
+    return c.json({ ok: true, purged: true })
+  }
+  const row = await c.env.DB.prepare('SELECT id FROM shares WHERE id = ?').bind(id).first()
   if (!row) throw Errors.notFound('SHARE_NOT_FOUND')
-  await c.env.DB.prepare('UPDATE shares SET revoked_at = ? WHERE id = ?').bind(Date.now(), c.req.param('id')).run()
+  await c.env.DB.prepare('UPDATE shares SET revoked_at = ? WHERE id = ?').bind(Date.now(), id).run()
   return c.json({ ok: true })
 })

@@ -81,7 +81,10 @@ export function SetupPage() {
           <Button
             variant="primary"
             className="flex-1"
-            onClick={() => navigate('/files', { replace: true })}
+            onClick={async () => {
+              await qc.invalidateQueries({ queryKey: ['bootstrap'] })
+              navigate('/files', { replace: true })
+            }}
           >
             {t('auth.done')}
           </Button>

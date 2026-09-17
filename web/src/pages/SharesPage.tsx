@@ -28,6 +28,7 @@ export function SharesPage() {
   const toast = useToast()
   const qc = useQueryClient()
   const [revoke, setRevoke] = useState<ShareDto | null>(null)
+  const [deleting, setDeleting] = useState<ShareDto | null>(null)
   const [edit, setEdit] = useState<ShareDto | null>(null)
 
   const listQuery = useQuery({
@@ -42,6 +43,15 @@ export function SharesPage() {
     mutationFn: (id: string) => api.del(`/api/shares/${id}`),
     onSuccess: invalidate,
   })
+
+  const purgeShare = async (share: ShareDto) => {
+    try {
+      await api.del(`/api/shares/${share.id}?purge=1`)
+      invalidate()
+    } catch {
+      toast(t('errors.UNKNOWN'), 'error')
+    }
+  }
 
   return (
     <div className="mx-auto max-w-4xl px-2 py-4 md:px-6">
@@ -98,13 +108,17 @@ export function SharesPage() {
                   </Button>
                 }
                 items={[
-                  { label: t('share.editTitle'), onSelect: () => setEdit(share) },
+                  { label: t('share.editTitle'), hidden: share.status === 'revoked', onSelect: () => setEdit(share) },
                   {
                     label: t('share.revoke'),
-                    icon: <Trash2 size={15} />,
-                    danger: true,
                     hidden: share.status !== 'active',
                     onSelect: () => setRevoke(share),
+                  },
+                  {
+                    label: t('share.delete'),
+                    icon: <Trash2 size={15} />,
+                    danger: true,
+                    onSelect: () => setDeleting(share),
                   },
                 ]}
               />
@@ -120,6 +134,14 @@ export function SharesPage() {
         danger
         onClose={() => setRevoke(null)}
         onConfirm={() => revoke && revokeMutation.mutate(revoke.id)}
+      />
+      <ConfirmDialog
+        open={!!deleting}
+        title={t('share.delete')}
+        message={t('share.deleteConfirm')}
+        danger
+        onClose={() => setDeleting(null)}
+        onConfirm={() => deleting && void purgeShare(deleting)}
       />
       {edit && <EditShareDialog share={edit} onClose={() => setEdit(null)} onSaved={invalidate} />}
     </div>

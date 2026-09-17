@@ -27,8 +27,10 @@ export function LoginPage() {
 
   const from = (location.state as { from?: string } | null)?.from ?? '/files'
 
-  const done = () => {
-    void qc.invalidateQueries({ queryKey: ['bootstrap'] })
+  const done = async () => {
+    // 必须等 bootstrap 重取完成再跳转：否则鉴权守卫读到登录前的旧缓存
+    // （me: undefined）会把用户弹回登录页，导致需要验证两次
+    await qc.invalidateQueries({ queryKey: ['bootstrap'] })
     navigate(from, { replace: true })
   }
 
@@ -61,7 +63,7 @@ export function LoginPage() {
     setError(null)
     try {
       await loginWithPasskey(false)
-      done()
+      await done()
     } catch (err) {
       setError(errText(err))
     } finally {
@@ -86,7 +88,7 @@ export function LoginPage() {
       } else if (mode === 'recover') {
         await api.post('/api/auth/recover', { code })
       }
-      done()
+      await done()
     } catch (err) {
       setError(errText(err))
       setBusy(false)

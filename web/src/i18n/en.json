@@ -107,6 +107,8 @@
     "downloads": "Downloaded {{count}} times",
     "revoke": "Revoke",
     "revokeConfirm": "This link will stop working immediately. Revoke it?",
+    "delete": "Delete record",
+    "deleteConfirm": "This removes the share from the list and invalidates the link immediately. Download stats will be lost. Delete?",
     "noShares": "No shares yet",
     "noSharesHint": "Pick “Share” from a file's menu to create a temporary link",
     "oneTime": "One-time link",

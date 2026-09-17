@@ -107,6 +107,8 @@
     "downloads": "已下载 {{count}} 次",
     "revoke": "吊销",
     "revokeConfirm": "吊销后此链接立即失效，确认吊销？",
+    "delete": "删除记录",
+    "deleteConfirm": "将从列表中删除这条分享记录，链接同时立即失效，下载统计不可恢复。确认删除？",
     "noShares": "还没有创建过分享",
     "noSharesHint": "在文件的菜单里选择“分享”即可生成临时链接",
     "oneTime": "一次性链接",

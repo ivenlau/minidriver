@@ -452,6 +452,13 @@ async function main() {
     await call('DELETE', `/api/shares/${row?.id}`)
     const after = await fetch(`${BASE}/api/s/${shareToken}/meta`)
     check('吊销后访客访问 → 404', after.status === 404)
+
+    // 回归：purge 彻底删除记录（分享管理里的「删除记录」）
+    const purgeShare = await call('POST', '/api/shares', { body: { nodeId: helloId, expiresIn: 3600 } })
+    const purged = await call('DELETE', `/api/shares/${purgeShare.json?.id}?purge=1`)
+    check('purge 删除成功', purged.res.status === 200 && purged.json?.purged === true)
+    const listAfterPurge = await call('GET', '/api/shares')
+    check('purge 后记录从列表消失', !listAfterPurge.json?.items?.some((s) => s.id === purgeShare.json?.id))
   }
 
   // 无密码分享 + 过期检查
