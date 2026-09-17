@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../lib/env'
+import { publicOrigin } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { ulid, randomToken, sha256Hex } from '../lib/ids'
 import { hashPassword } from '../lib/crypto'
@@ -103,7 +104,7 @@ shares.post('/shares', async (c) => {
     .bind(id, node.id, await sha256Hex(token), passwordHash, now + expiresIn * 1000, maxDownloads, now)
     .run()
 
-  const base = c.env.APP_PUBLIC_URL.replace(/\/+$/, '')
+  const base = publicOrigin(c.env, c.req.url).replace(/\/+$/, '')
   return c.json({ id, token, url: `${base}/s/${token}`, expiresAt: now + expiresIn * 1000 }, 201)
 })
 

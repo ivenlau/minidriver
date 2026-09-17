@@ -39,24 +39,42 @@ npm run dev                           # 同时启动 wrangler dev(8787, API) + v
 
 ## 部署到 Cloudflare
 
-```bash
-npx wrangler login
-npx wrangler r2 bucket create minidriver                       # 文件桶
-npx wrangler d1 create minidriver                              # 把输出的 database_id 填入 wrangler.jsonc
-```
+### 一次性前置（两种方式共用，约 5 分钟）
 
-编辑 `wrangler.jsonc`：`APP_PUBLIC_URL` 改为你的正式地址（建议绑定自定义域名，Passkey 在自定义域名的 HTTPS 下体验最佳）。
+1. dashboard → R2 → 创建桶 `minidriver`（首次启用 R2 需绑卡，免费额度内不扣费）
+2. dashboard → D1 → 创建数据库 `minidriver`，把 **Database ID** 填入 `wrangler.jsonc` 后提交
+   （database_id 不是机密，可以提交；机密是下面两项）
+3. 设置 Secrets（dashboard → Worker → Settings → Variables and Secrets，设置一次永久生效）：
+   - `SESSION_ENC_KEY`：`node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"`
+   - `SETUP_TOKEN`：自拟一次性初始化口令
+4. `APP_PUBLIC_URL` **留空即可**：自动使用访问时的域名。之后若绑定自定义域名并希望分享链接/Passkey 以主域名为准，再填上它
 
-设置 secrets 并部署：
+### 方式 A：GitHub 自动部署（推荐，仓库已含工作流）
 
-```bash
-npx wrangler secret put SESSION_ENC_KEY   # node -e "console.log(require('crypto').randomBytes(32).toString('base64'))"
-npx wrangler secret put SETUP_TOKEN       # 自拟一次性初始化口令，部署后立刻用于 /setup
-npm run db:migrate:remote
-npm run deploy                            # 构建前端 + wrangler deploy（D1 迁移会在部署前应用）
-```
+`.github/workflows/deploy.yml` 会在每次 push `main` 时自动执行：
+**类型检查 → 构建 → 本地冒烟测试（60 项断言）→ 远程 D1 迁移（幂等）→ wrangler deploy**
 
-首次访问 `https://<你的域名>/setup` 完成初始化（此后永久关闭）。
+配置（GitHub 仓库 → Settings → Secrets and variables → Actions）：
+
+| Secret | 说明 |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | 用「Edit Cloudflare Workers」模板创建，额外勾选 Account·D1 Edit、Account·Workers R2 Storage Bucket Item Edit |
+| `CLOUDFLARE_ACCOUNT_ID` | dashboard 首页右侧可见 |
+
+### 方式 B：dashboard 关联 Git（Workers Builds）
+
+Workers & Pages → Create → Workers → **Import an existing repository**（注意是 Workers，不是 Pages）：
+
+| 设置项 | 值 |
+|---|---|
+| Build command | `npm run build && npx wrangler d1 migrations apply minidriver --remote` |
+| Deploy command | `npx wrangler deploy` |
+
+构建环境自带授权，Build command 里的迁移即可远程执行，无需本地 wrangler 登录。
+
+### 首次初始化
+
+部署完成后访问 `https://<你的域名>/setup`：输入 `SETUP_TOKEN` → 注册第一个 Passkey → **保存恢复码**（此后永久关闭）。
 
 ### 生产建议
 

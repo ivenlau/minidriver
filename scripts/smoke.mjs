@@ -8,11 +8,41 @@
  */
 
 import { createHmac } from 'node:crypto'
+import { readFileSync } from 'node:fs'
 
 const BASE = process.env.SMOKE_BASE ?? 'http://127.0.0.1:8787'
-const SETUP_TOKEN = 'dev-setup-token'
-const RP_ID = 'localhost'
-const ORIGIN = 'http://localhost:8787'
+const SETUP_TOKEN = process.env.SMOKE_SETUP_TOKEN ?? 'dev-setup-token'
+
+/**
+ * RP ID / Origin 解析：
+ * 1) 显式环境变量 SMOKE_RP_ID / SMOKE_ORIGIN 优先
+ * 2) 否则读取 .dev.vars：配置了 APP_PUBLIC_URL 就对齐它（npm run smoke 开箱即用）
+ * 3) 都没有（零配置/CI）→ 与 BASE 同源（服务端回退到请求来源）
+ */
+function readDevVars() {
+  try {
+    return Object.fromEntries(
+      readFileSync('.dev.vars', 'utf8')
+        .split('\n')
+        .filter((l) => l.includes('=') && !l.trim().startsWith('#'))
+        .map((l) => [l.slice(0, l.indexOf('=')), l.slice(l.indexOf('=') + 1)]),
+    )
+  } catch {
+    return {}
+  }
+}
+
+let RP_ID = process.env.SMOKE_RP_ID ?? new URL(BASE).hostname
+let ORIGIN = process.env.SMOKE_ORIGIN ?? new URL(BASE).origin
+{
+  const dv = readDevVars()
+  const configured = dv.APP_PUBLIC_URL && !dv.APP_PUBLIC_URL.includes('<your-subdomain>')
+  if (!process.env.SMOKE_RP_ID && configured) {
+    RP_ID = new URL(dv.APP_PUBLIC_URL).hostname
+    const allowed = (dv.ALLOWED_ORIGINS ?? '').split(',').map((s) => s.trim()).filter(Boolean)
+    ORIGIN = process.env.SMOKE_ORIGIN ?? allowed.find((o) => new URL(o).hostname === RP_ID) ?? dv.APP_PUBLIC_URL
+  }
+}
 
 let passed = 0
 let failed = 0

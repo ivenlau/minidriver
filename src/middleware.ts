@@ -24,7 +24,7 @@ export async function originCheck(c: Context<AppEnv>, next: Next) {
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next()
 
   const origin = c.req.header('Origin')
-  if (origin && !allowedOrigins(c.env).includes(origin)) {
+  if (origin && !allowedOrigins(c.env, c.req.url).includes(origin)) {
     throw Errors.forbidden('ORIGIN_NOT_ALLOWED')
   }
   if (c.req.header('x-minidriver') !== '1') throw Errors.forbidden('CSRF')

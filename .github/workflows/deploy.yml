@@ -1,0 +1,62 @@
+# 推送 main 自动：类型检查 → 构建 → 本地冒烟测试 → 远程 D1 迁移 → 部署
+#
+# 前置（一次性，GitHub 仓库 Settings → Secrets and variables → Actions）：
+#   CLOUDFLARE_API_TOKEN   — dashboard → My Profile → API Tokens →
+#                            用 "Edit Cloudflare Workers" 模板创建，并额外勾选
+#                            Account · D1 Edit 与 Account · Workers R2 Storage Bucket Item Edit
+#   CLOUDFLARE_ACCOUNT_ID  — dashboard 任意页面右侧 / Workers & Pages 概览可查
+#
+# SESSION_ENC_KEY / SETUP_TOKEN 不在本工作流管理：在 Cloudflare dashboard
+# （Worker → Settings → Variables and Secrets）设置一次即可，部署不会覆盖 Secrets。
+name: Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    env:
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: 安装依赖
+        run: npm ci
+
+      - name: 类型检查 + 构建
+        run: |
+          npm run typecheck
+          npm run build
+
+      - name: API 冒烟测试（本地 workerd + D1/R2 模拟）
+        run: |
+          node scripts/ensure-dist.mjs
+          printf 'SESSION_ENC_KEY=%s\nSETUP_TOKEN=ci-smoke-token\n' \
+            "$(node -e 'console.log(require("crypto").randomBytes(32).toString("base64"))')" > .dev.vars
+          npm run db:migrate:local
+          npx wrangler dev --port 8787 &
+          for i in $(seq 1 30); do
+            curl -sf http://127.0.0.1:8787/api/health > /dev/null && break
+            sleep 1
+          done
+          SMOKE_SETUP_TOKEN=ci-smoke-token npm run smoke
+
+      - name: 应用远程 D1 迁移（幂等）
+        run: npx wrangler d1 migrations apply minidriver --remote
+
+      - name: 部署到 Cloudflare Workers
+        run: npx wrangler deploy

@@ -104,14 +104,20 @@ auth.post('/setup', async (c) => {
   const credential = body.credential as RegistrationResponseJSON
   if (!credential?.response) throw Errors.badRequest('BAD_CREDENTIAL')
   const challenge = await readChallenge(c, 'register')
-  const verification = await verifyRegistrationResponse({
-    response: credential,
-    expectedChallenge: challenge,
-    expectedOrigin: allowedOrigins(c.env),
-    expectedRPID: rpID(c.env),
-    // 个人设备优先体验：允许未做生物识别的认证器（UP 仍然强制）
-    requireUserVerification: false,
-  })
+  let verification
+  try {
+    verification = await verifyRegistrationResponse({
+      response: credential,
+      expectedChallenge: challenge,
+      expectedOrigin: allowedOrigins(c.env, c.req.url),
+      expectedRPID: rpID(c.env, c.req.url),
+      // 个人设备优先体验：允许未做生物识别的认证器（UP 仍然强制）
+      requireUserVerification: false,
+    })
+  } catch {
+    // 库对 origin/RP 不匹配等抛裸 Error，转为可读的业务错误码
+    throw Errors.unauthorized('REGISTRATION_FAILED')
+  }
   if (!verification.verified || !verification.registrationInfo) throw Errors.unauthorized('REGISTRATION_FAILED')
   const { credential: cred, credentialBackedUp } = verification.registrationInfo
 
@@ -156,7 +162,7 @@ auth.get('/auth/webauthn/setup/options', async (c) => {
   const email = c.req.query('email') || 'owner@minidriver.local'
   const options = await generateRegistrationOptions({
     rpName: 'MiniDriver',
-    rpID: rpID(c.env),
+    rpID: rpID(c.env, c.req.url),
     userName: email,
     attestationType: 'none',
     authenticatorSelection: { residentKey: 'required', userVerification: 'preferred' },
@@ -169,7 +175,7 @@ auth.get('/auth/webauthn/setup/options', async (c) => {
 auth.get('/auth/webauthn/login/options', async (c) => {
   const user = await c.env.DB.prepare('SELECT id FROM users LIMIT 1').first()
   if (!user) throw Errors.notFound('NOT_INITIALIZED')
-  const options = await generateAuthenticationOptions({ rpID: rpID(c.env), userVerification: 'preferred' })
+  const options = await generateAuthenticationOptions({ rpID: rpID(c.env, c.req.url), userVerification: 'preferred' })
   await setChallenge(c, 'login', options.challenge)
   return c.json(options)
 })
@@ -185,19 +191,24 @@ auth.post('/auth/webauthn/login', async (c) => {
     .first<CredRow>()
   if (!credRow) throw Errors.unauthorized('CREDENTIAL_UNKNOWN')
 
-  const verification = await verifyAuthenticationResponse({
-    response: credential,
-    expectedChallenge: challenge,
-    expectedOrigin: allowedOrigins(c.env),
-    expectedRPID: rpID(c.env),
-    credential: {
-      id: credRow.id,
-      publicKey: new Uint8Array(credRow.public_key),
-      counter: credRow.counter,
-      transports: credRow.transports?.split(',') ?? undefined,
-    },
-    requireUserVerification: false,
-  })
+  let verification
+  try {
+    verification = await verifyAuthenticationResponse({
+      response: credential,
+      expectedChallenge: challenge,
+      expectedOrigin: allowedOrigins(c.env, c.req.url),
+      expectedRPID: rpID(c.env, c.req.url),
+      credential: {
+        id: credRow.id,
+        publicKey: new Uint8Array(credRow.public_key),
+        counter: credRow.counter,
+        transports: credRow.transports?.split(',') ?? undefined,
+      },
+      requireUserVerification: false,
+    })
+  } catch {
+    throw Errors.unauthorized('AUTH_FAILED')
+  }
   if (!verification.verified) throw Errors.unauthorized('AUTH_FAILED')
 
   const { newCounter } = verification.authenticationInfo
@@ -357,7 +368,7 @@ auth.get('/auth/webauthn/register/options', requireAuth, async (c) => {
     .all<{ id: string; transports: string | null }>()
   const options = await generateRegistrationOptions({
     rpName: 'MiniDriver',
-    rpID: rpID(c.env),
+    rpID: rpID(c.env, c.req.url),
     userName: user.email,
     userDisplayName: user.display_name,
     attestationType: 'none',
@@ -376,13 +387,18 @@ auth.post('/auth/webauthn/register', requireAuth, async (c) => {
   const credential = body.credential as RegistrationResponseJSON
   if (!credential?.response) throw Errors.badRequest('BAD_CREDENTIAL')
   const challenge = await readChallenge(c, 'register')
-  const verification = await verifyRegistrationResponse({
-    response: credential,
-    expectedChallenge: challenge,
-    expectedOrigin: allowedOrigins(c.env),
-    expectedRPID: rpID(c.env),
-    requireUserVerification: false,
-  })
+  let verification
+  try {
+    verification = await verifyRegistrationResponse({
+      response: credential,
+      expectedChallenge: challenge,
+      expectedOrigin: allowedOrigins(c.env, c.req.url),
+      expectedRPID: rpID(c.env, c.req.url),
+      requireUserVerification: false,
+    })
+  } catch {
+    throw Errors.unauthorized('REGISTRATION_FAILED')
+  }
   if (!verification.verified || !verification.registrationInfo) throw Errors.unauthorized('REGISTRATION_FAILED')
   const { credential: cred, credentialBackedUp } = verification.registrationInfo
   const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : 'Passkey'
