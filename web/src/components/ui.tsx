@@ -31,7 +31,7 @@ export function Button({ variant = 'secondary', size = 'md', className, ...rest 
   return (
     <button
       className={cn(
-        'inline-flex cursor-pointer items-center font-medium transition-colors duration-150 select-none',
+        'inline-flex cursor-pointer items-center whitespace-nowrap font-medium transition-colors duration-150 select-none',
         'focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent disabled:cursor-not-allowed disabled:opacity-50',
         variants[variant],
         sizes[size],

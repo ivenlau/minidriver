@@ -37,9 +37,10 @@ jobs:
       - name: 安装依赖
         run: npm ci
 
-      - name: 类型检查 + 构建
+      - name: 类型检查 + 构建 + D1 语句审计
         run: |
           npm run typecheck
+          node scripts/audit-d1.mjs
           npm run build
 
       - name: API 冒烟测试（本地 workerd + D1/R2 模拟）

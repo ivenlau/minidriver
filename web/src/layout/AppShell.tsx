@@ -90,18 +90,6 @@ export function AppShell() {
         </nav>
         <div className="px-3 pb-3">
           <StorageMeter />
-          <NavLink
-            to="/settings"
-            className={({ isActive }) =>
-              cn(
-                'mt-1 flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition-colors',
-                isActive ? 'bg-accent-soft font-medium text-accent' : 'text-muted hover:bg-surface2 hover:text-text',
-              )
-            }
-          >
-            <Settings size={18} />
-            {t('nav.settings')}
-          </NavLink>
         </div>
       </aside>
 

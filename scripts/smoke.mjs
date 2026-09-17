@@ -501,6 +501,21 @@ async function main() {
     check('Passkey 登录成功', login.res.status === 200, JSON.stringify(login.json))
     const me = await call('GET', '/api/auth/me')
     check('会话可用', me.json?.displayName === 'Owner')
+
+    // 回归：添加第二个 Passkey 的 INSERT 必须真正落库（历史上静默丢过 .run()）
+    const regOpt = await call('GET', '/api/auth/webauthn/register/options')
+    check('注册选项（需登录）', typeof regOpt.json?.challenge === 'string')
+    const att2 = await authr.makeCredential(RP_ID)
+    const reg = await call('POST', '/api/auth/webauthn/register', {
+      body: { credential: registrationResponse(att2, regOpt.json.challenge), name: 'Second key' },
+    })
+    check('添加第二个 Passkey', reg.res.status === 200, JSON.stringify(reg.json))
+    const dupReg = await call('POST', '/api/auth/webauthn/register', {
+      body: { credential: registrationResponse(att2, regOpt.json.challenge), name: 'Dup key' },
+    })
+    check('重复注册同一凭证 → 409', dupReg.res.status === 409 && dupReg.json?.error?.code === 'CREDENTIAL_EXISTS', JSON.stringify(dupReg.json))
+    const credList = await call('GET', '/api/auth/credentials')
+    check('Passkey 列表包含新凭证', credList.json?.credentials?.length === 2 && credList.json?.credentials?.some((x) => x.name === 'Second key'), JSON.stringify(credList.json))
   }
 
   // 密码 + TOTP

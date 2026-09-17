@@ -402,18 +402,25 @@ auth.post('/auth/webauthn/register', requireAuth, async (c) => {
   if (!verification.verified || !verification.registrationInfo) throw Errors.unauthorized('REGISTRATION_FAILED')
   const { credential: cred, credentialBackedUp } = verification.registrationInfo
   const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim() : 'Passkey'
+  // 同一认证器重复注册（如 iOS 静默返回已有凭证）时给出明确错误而非唯一键冲突 500
+  const existing = await c.env.DB.prepare('SELECT id FROM webauthn_credentials WHERE id = ?')
+    .bind(cred.id)
+    .first<{ id: string }>()
+  if (existing) throw Errors.conflict('CREDENTIAL_EXISTS')
   await c.env.DB.prepare(
     'INSERT INTO webauthn_credentials (id, user_id, name, public_key, counter, transports, backed_up, created_at) VALUES (?,?,?,?,?,?,?,?)',
-  ).bind(
-    cred.id,
-    c.get('userId'),
-    name,
-    cred.publicKey,
-    cred.counter,
-    cred.transports?.join(',') ?? null,
-    credentialBackedUp ? 1 : 0,
-    Date.now(),
   )
+    .bind(
+      cred.id,
+      c.get('userId'),
+      name,
+      cred.publicKey,
+      cred.counter,
+      cred.transports?.join(',') ?? null,
+      credentialBackedUp ? 1 : 0,
+      Date.now(),
+    )
+    .run()
   return c.json({ ok: true, id: cred.id })
 })
 
@@ -568,7 +575,7 @@ async function readChallenge(c: Context<AppEnv>, purpose: 'register' | 'login'):
 async function generateRecoveryCodes(db: AppEnv['Bindings']['DB'], userId: string): Promise<string[]> {
   const alphabet = 'ABCDEFGHJKMNPQRSTVWXYZ23456789'
   const codes: string[] = []
-  const stmts = [db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').bind(userId)]
+  const stmts = [db.prepare('DELETE FROM recovery_codes WHERE user_id = ?').bind(userId)] // audit-ok：下方 db.batch(stmts) 统一执行
   for (let i = 0; i < 10; i++) {
     const raw = randomToken(12).replace(/[-_]/g, 'A')
     let s = ''

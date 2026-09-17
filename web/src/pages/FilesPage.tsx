@@ -412,15 +412,6 @@ export function FilesPage() {
         </div>
       )}
 
-      {/* 移动端上传 FAB */}
-      <button
-        onClick={() => fileInputRef.current?.click()}
-        aria-label={t('files.upload')}
-        className="fixed right-4 bottom-[88px] z-30 flex h-14 w-14 cursor-pointer items-center justify-center rounded-2xl bg-accent text-white shadow-pop transition-transform active:scale-95 md:hidden"
-      >
-        <Upload size={22} />
-      </button>
-
       {/* 对话框 */}
       {shareNode && <ShareDialog node={shareNode} onClose={() => setShareNode(null)} />}
       {moveNodes && (

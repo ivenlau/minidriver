@@ -176,6 +176,33 @@ export function LoginPage() {
                   {t('auth.verify')}
                 </Button>
               </div>
+              {/* 备用方式之间互相切换（否则启用密码后无法使用恢复码） */}
+              <div className="flex justify-center gap-4 pt-1 text-[12px]">
+                {mode !== 'recover' && (
+                  <button
+                    type="button"
+                    className="cursor-pointer text-muted hover:text-accent"
+                    onClick={() => {
+                      setMode('recover')
+                      setError(null)
+                    }}
+                  >
+                    {t('auth.useRecovery')}
+                  </button>
+                )}
+                {mode !== 'password' && bootstrap?.authMethods.password && (
+                  <button
+                    type="button"
+                    className="cursor-pointer text-muted hover:text-accent"
+                    onClick={() => {
+                      setMode('password')
+                      setError(null)
+                    }}
+                  >
+                    {t('auth.usePasswordShort')}
+                  </button>
+                )}
+              </div>
             </form>
           )}
 
