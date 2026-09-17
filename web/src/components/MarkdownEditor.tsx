@@ -16,7 +16,7 @@ import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { api } from '../lib/api'
 import type { NodeDto } from '../lib/types'
-import { fileKind } from './FileIcon'
+import { fileKind, isMarkdown } from './FileIcon'
 import { Button, ConfirmDialog, Spinner, cn } from './ui'
 import { useToast } from '../state/toast'
 
@@ -45,6 +45,8 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
   const [confirmLeave, setConfirmLeave] = useState(false)
 
   const dirty = text !== original
+  // 仅 Markdown 提供实时预览/切换；其余文本就是单一编辑页
+  const isMd = isMarkdown(node)
 
   // 加载内容
   useEffect(() => {
@@ -186,7 +188,8 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
           {node.name}
           {dirty && <span className="ml-1 text-accent">●</span>}
         </p>
-        {/* 移动端 编辑|预览 切换 */}
+        {/* 移动端 编辑|预览 切换（仅 Markdown） */}
+        {isMd && (
         <div className="flex rounded-lg bg-surface2 p-0.5 md:hidden">
           {(['edit', 'preview'] as const).map((v) => (
             <button
@@ -201,6 +204,7 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
             </button>
           ))}
         </div>
+        )}
         <span className="hidden text-[11px] text-muted md:inline">{t('editor.saveHint')}</span>
         <Button variant="primary" size="sm" onClick={() => void save()} disabled={!dirty || saving}>
           {saving ? <Spinner size={14} /> : <Save size={15} />}
@@ -208,8 +212,8 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
         </Button>
       </header>
 
-      {/* 插入工具栏 */}
-      {view !== 'preview' && (
+      {/* 插入工具栏（仅 Markdown） */}
+      {isMd && view !== 'preview' && (
         <div className="flex shrink-0 items-center gap-0.5 overflow-x-auto border-b border-line bg-surface px-2 py-1">
           {tools.map(({ icon: Icon, label, run }) => (
             <button
@@ -224,9 +228,9 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
         </div>
       )}
 
-      {/* 内容区：桌面分屏 / 移动端单 pane 切换 */}
+      {/* 内容区：Markdown 桌面分屏 / 移动端单 pane 切换；纯文本全宽编辑 */}
       <div className="flex min-h-0 flex-1">
-        <div className={cn('min-w-0 flex-1', view === 'preview' && 'hidden md:block')}>
+        <div className={cn('min-w-0 flex-1', isMd && view === 'preview' && 'hidden md:block')}>
           <textarea
             ref={taRef}
             value={text}
@@ -239,23 +243,25 @@ export function MarkdownEditor({ node, onClose }: { node: NodeDto; onClose: () =
             className="h-full w-full resize-none bg-bg p-4 font-mono text-[16px] leading-relaxed text-text outline-none md:text-[13.5px]"
           />
         </div>
-        <div
-          className={cn(
-            'min-w-0 flex-1 overflow-y-auto border-line md:border-l',
-            view === 'edit' && 'hidden md:block',
-          )}
-        >
-          <article className="prose prose-sm dark:prose-invert max-w-none p-4 md:prose-base">
-            <ReactMarkdown
-              remarkPlugins={[remarkGfm]}
-              components={{
-                a: ({ node, ...rest }) => <a {...rest} target="_blank" rel="noreferrer" />,
-              }}
-            >
-              {previewSrc}
-            </ReactMarkdown>
-          </article>
-        </div>
+        {isMd && (
+          <div
+            className={cn(
+              'min-w-0 flex-1 overflow-y-auto border-line md:border-l',
+              view === 'edit' && 'hidden md:block',
+            )}
+          >
+            <article className="prose prose-sm dark:prose-invert max-w-none p-4 md:prose-base">
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  a: ({ node, ...rest }) => <a {...rest} target="_blank" rel="noreferrer" />,
+                }}
+              >
+                {previewSrc}
+              </ReactMarkdown>
+            </article>
+          </div>
+        )}
       </div>
 
       <ConfirmDialog

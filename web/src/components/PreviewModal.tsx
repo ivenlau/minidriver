@@ -1,13 +1,15 @@
 import { useEffect, useState } from 'react'
 import { Download, Pencil } from 'lucide-react'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 import { useTranslation } from 'react-i18next'
 import { fetchTextPreview } from '../lib/api'
 import type { NodeDto } from '../lib/types'
 import { formatBytes } from '../lib/format'
 import { Modal, Button, Spinner } from './ui'
-import { fileKind } from './FileIcon'
+import { fileKind, isMarkdown } from './FileIcon'
 
-/** 全屏文件预览：图片 / 视频 / 音频 / PDF / 文本 */
+/** 全屏文件预览：图片 / 视频 / 音频 / PDF / 文本（md 渲染，其余显示原文） */
 export function PreviewModal({
   node,
   onClose,
@@ -26,8 +28,7 @@ export function PreviewModal({
     setText(null)
     setFailed(false)
     if (!node) return
-    const kind = fileKind(node)
-    if (kind !== 'text') return
+    if (fileKind(node) !== 'text') return
     setLoading(true)
     fetchTextPreview(node.id)
       .then(setText)
@@ -37,39 +38,61 @@ export function PreviewModal({
 
   if (!node) return null
   const kind = fileKind(node)
+  const md = isMarkdown(node)
   const contentUrl = `/api/nodes/${node.id}/content`
   const downloadUrl = `${contentUrl}?dl=1`
 
   return (
-    <Modal open onClose={onClose} wide title={node.name}>
+    <Modal open onClose={onClose} wide fullHeight title={node.name}>
       <div className="flex flex-col gap-4">
-        <div className="flex min-h-40 items-center justify-center overflow-hidden rounded-xl bg-surface2 md:min-h-72">
-          {failed && <p className="p-8 text-sm text-muted">{t('preview.loadFailed')}</p>}
-          {!failed && loading && <Spinner size={24} />}
-          {!failed && !loading && kind === 'image' && (
-            <img src={contentUrl} alt={node.name} className="max-h-[60dvh] w-auto max-w-full object-contain" />
-          )}
-          {!failed && !loading && kind === 'video' && (
-            <video src={contentUrl} controls autoPlay className="max-h-[60dvh] w-full" />
-          )}
-          {!failed && !loading && kind === 'audio' && (
-            <div className="w-full max-w-md p-6">
-              <audio src={contentUrl} controls autoPlay className="w-full" />
-            </div>
-          )}
-          {!failed && !loading && kind === 'pdf' && (
-            <iframe src={contentUrl} title={node.name} className="h-[60dvh] w-full rounded-xl border-0 bg-white" />
-          )}
-          {!failed && !loading && kind === 'text' && text !== null && (
-            <pre className="max-h-[60dvh] w-full overflow-auto p-4 text-left text-[13px] leading-relaxed whitespace-pre-wrap text-text">
-              {text}
-            </pre>
-          )}
-          {!failed && !loading && kind === 'text' && text === null && <Spinner />}
-          {(kind === 'other' || kind === 'archive' || kind === 'folder') && (
-            <p className="p-8 text-sm text-muted">{t('preview.cannotPreview')}</p>
-          )}
-        </div>
+        {/* 文本类：全宽正常排版（md 渲染 / 其余原文左对齐），不做居中灰盒 */}
+        {kind === 'text' ? (
+          <div className="min-h-40 overflow-hidden rounded-xl bg-surface2">
+            {failed && <p className="p-8 text-sm text-muted">{t('preview.loadFailed')}</p>}
+            {loading && (
+              <div className="flex w-full justify-center p-8">
+                <Spinner size={22} />
+              </div>
+            )}
+            {!failed && !loading && md && (
+              <article className="prose prose-sm dark:prose-invert max-w-none bg-surface p-4 md:prose-base">
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm]}
+                  components={{ a: ({ node: n, ...rest }) => <a {...rest} target="_blank" rel="noreferrer" /> }}
+                >
+                  {text ?? ''}
+                </ReactMarkdown>
+              </article>
+            )}
+            {!failed && !loading && !md && (
+              <pre className="overflow-x-auto p-4 text-left font-mono text-[13px] leading-relaxed whitespace-pre-wrap break-words text-text">
+                {text ?? ''}
+              </pre>
+            )}
+          </div>
+        ) : (
+          <div className="flex min-h-40 items-center justify-center overflow-hidden rounded-xl bg-surface2 md:min-h-72">
+            {failed && <p className="p-8 text-sm text-muted">{t('preview.loadFailed')}</p>}
+            {!failed && loading && <Spinner size={24} />}
+            {!failed && !loading && kind === 'image' && (
+              <img src={contentUrl} alt={node.name} className="max-h-[60dvh] w-auto max-w-full object-contain" />
+            )}
+            {!failed && !loading && kind === 'video' && (
+              <video src={contentUrl} controls autoPlay className="max-h-[60dvh] w-full" />
+            )}
+            {!failed && !loading && kind === 'audio' && (
+              <div className="w-full max-w-md p-6">
+                <audio src={contentUrl} controls autoPlay className="w-full" />
+              </div>
+            )}
+            {!failed && !loading && kind === 'pdf' && (
+              <iframe src={contentUrl} title={node.name} className="h-[60dvh] w-full rounded-xl border-0 bg-white" />
+            )}
+            {(kind === 'other' || kind === 'archive' || kind === 'folder') && (
+              <p className="p-8 text-sm text-muted">{t('preview.cannotPreview')}</p>
+            )}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-3">
           <span className="text-[13px] text-muted">
             {formatBytes(node.size)} · {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(node.updatedAt))}

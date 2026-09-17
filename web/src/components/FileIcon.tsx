@@ -3,6 +3,11 @@ import type { NodeDto } from '../lib/types'
 
 export type FileKind = 'folder' | 'image' | 'video' | 'audio' | 'pdf' | 'text' | 'archive' | 'other'
 
+/** Markdown 文件判定（mime 或扩展名） */
+export function isMarkdown(node: Pick<NodeDto, 'mime' | 'name'>): boolean {
+  return node.mime === 'text/markdown' || /\.(md|markdown)$/i.test(node.name)
+}
+
 export function fileKind(node: Pick<NodeDto, 'type' | 'mime' | 'name'>): FileKind {
   if (node.type === 'folder') return 'folder'
   const mime = node.mime ?? ''

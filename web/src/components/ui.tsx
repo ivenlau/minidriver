@@ -65,12 +65,15 @@ export function Modal({
   title,
   children,
   wide,
+  fullHeight,
 }: {
   open: boolean
   onClose: () => void
   title?: ReactNode
   children: ReactNode
   wide?: boolean
+  /** 移动端占满全屏（预览页等需要最大展示空间的场景） */
+  fullHeight?: boolean
 }) {
   useEffect(() => {
     if (!open) return
@@ -97,12 +100,14 @@ export function Modal({
         role="dialog"
         aria-modal="true"
         className={cn(
-          'md-sheet-up sm:md-slide-up flex max-h-[88dvh] w-full flex-col overflow-hidden border border-line bg-surface shadow-pop',
-          'rounded-t-3xl sm:rounded-2xl',
+          'md-sheet-up sm:md-slide-up flex w-full flex-col overflow-hidden border border-line bg-surface shadow-pop',
+          fullHeight
+            ? 'h-[100dvh] rounded-none sm:h-auto sm:max-h-[88dvh] sm:rounded-2xl'
+            : 'max-h-[88dvh] rounded-t-3xl sm:rounded-2xl',
           wide ? 'sm:max-w-2xl' : 'sm:max-w-md',
         )}
       >
-        <div className="flex items-center justify-between px-5 pt-4 pb-2 sm:px-6">
+        <div className={cn('flex items-center justify-between px-5 pt-4 pb-2 sm:px-6', fullHeight && 'hidden sm:flex')}>
           <div className="mx-auto h-1 w-10 rounded-full bg-surface3 sm:hidden" />
         </div>
         {title && (
