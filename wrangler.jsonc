@@ -26,7 +26,7 @@
   "vars": {
     // 规范对外地址（分享链接 + Passkey RP ID）。留空 = 自动使用访问时的域名（单域名零配置）。
     // 绑定了多个域名（如自定义域 + workers.dev）时必须填主域名，否则 Passkey 不能跨域互通。
-    "APP_PUBLIC_URL": "",
+    "APP_PUBLIC_URL": "https://yourdomain.com",
     // 允许的来源（逗号分隔）。不填则默认为 APP_PUBLIC_URL（或请求来源）
     "ALLOWED_ORIGINS": ""
   },
