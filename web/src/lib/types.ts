@@ -11,6 +11,7 @@ export type NodeDto = {
   mime: string | null
   starred: boolean
   hasThumb: boolean
+  publicSlug: string | null
   createdAt: number
   updatedAt: number
   childCount?: number

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useQueryClient } from '@tanstack/react-query'
-import { Download, Pencil } from 'lucide-react'
+import { Copy, Download, Pencil } from 'lucide-react'
 import ReactMarkdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useTranslation } from 'react-i18next'
@@ -11,6 +11,8 @@ import { Modal, Button, ConfirmDialog, Spinner } from './ui'
 import { fileKind, isMarkdown } from './FileIcon'
 import { TextEditorPane } from './MarkdownEditor'
 import { useToast } from '../state/toast'
+
+const copyPublicLink = (slug: string) => navigator.clipboard.writeText(`${location.origin}/i/${slug}`).catch(() => {})
 
 /**
  * 文件预览弹窗（底部弹出，高度随内容自适应，底栏钉底）。
@@ -183,6 +185,19 @@ export function PreviewModal({
               {formatBytes(node.size)} · {new Intl.DateTimeFormat(i18n.language, { dateStyle: 'medium' }).format(new Date(node.updatedAt))}
             </span>
             <div className="flex shrink-0 gap-2">
+              {node.publicSlug && (
+                <Button
+                  size="sm"
+                  title={`${location.origin}/i/${node.publicSlug}`}
+                  onClick={() => {
+                    copyPublicLink(node.publicSlug!)
+                    toast(t('common.copied'), 'success')
+                  }}
+                >
+                  <Copy size={15} />
+                  {t('files.publicLink')}
+                </Button>
+              )}
               {kind === 'text' && canEditText(node) && (
                 <Button size="sm" onClick={() => setEditing(true)}>
                   <Pencil size={15} />

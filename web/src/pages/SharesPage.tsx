@@ -78,6 +78,7 @@ export function SharesPage() {
                     parentId: null,
                     size: share.size,
                     starred: false,
+                    publicSlug: null,
                     createdAt: share.createdAt,
                     updatedAt: share.createdAt,
                   }}

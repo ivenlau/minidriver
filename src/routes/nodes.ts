@@ -13,6 +13,7 @@ import {
   subtreeContains,
   subtreeIds,
   batchedIn,
+  generatePublicSlug,
   isPreviewable,
   toNodeDto,
   type NodeRow,
@@ -149,11 +150,22 @@ nodes.patch('/nodes/:id', async (c) => {
     await assertNameAvailable(c.env.DB, targetParent, finalName, node.id)
   }
 
-  await c.env.DB.prepare('UPDATE nodes SET name = ?, parent_id = ?, starred = ?, updated_at = ? WHERE id = ?')
+  // 图床公开直链开关：开启生成 slug（重命名/移动不影响），关闭置空使直链失效
+  let publicSlug = node.public_slug
+  if (body.public === true && node.type === 'file' && !node.public_slug) {
+    publicSlug = await generatePublicSlug(c.env.DB)
+  } else if (body.public === false) {
+    publicSlug = null
+  }
+
+  await c.env.DB.prepare(
+    'UPDATE nodes SET name = ?, parent_id = ?, starred = ?, public_slug = ?, updated_at = ? WHERE id = ?',
+  )
     .bind(
       finalName,
       targetParent,
       starred === undefined ? node.starred : starred,
+      publicSlug,
       Date.now(),
       node.id,
     )

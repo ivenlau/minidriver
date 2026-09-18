@@ -1,5 +1,6 @@
 import type { AppEnv } from './env'
 import { Errors } from './errors'
+import { randomToken } from './ids'
 
 export type NodeRow = {
   id: string
@@ -11,6 +12,7 @@ export type NodeRow = {
   r2_key: string | null
   thumb_key: string | null
   sha256: string | null
+  public_slug: string | null
   starred: number
   created_at: number
   updated_at: number
@@ -26,6 +28,7 @@ export type NodeDto = {
   mime: string | null
   starred: boolean
   hasThumb: boolean
+  publicSlug: string | null
   createdAt: number
   updatedAt: number
   childCount?: number
@@ -44,6 +47,7 @@ export function toNodeDto(n: NodeRow, extra: Partial<NodeDto> = {}): NodeDto {
     mime: n.mime,
     starred: !!n.starred,
     hasThumb: !!n.thumb_key,
+    publicSlug: n.public_slug ?? null,
     createdAt: n.created_at,
     updatedAt: n.updated_at,
     ...extra,
@@ -143,4 +147,14 @@ export function isPreviewable(mime: string | null): boolean {
   if (!mime) return false
   if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')) return true
   return ['application/pdf', 'text/plain', 'application/json'].includes(mime) || mime.startsWith('text/')
+}
+
+/** 生成图床直链 slug（16 字符 base64url，先查重避免撞唯一索引） */
+export async function generatePublicSlug(db: AppEnv['Bindings']['DB']): Promise<string> {
+  for (let i = 0; i < 5; i++) {
+    const slug = randomToken(12)
+    const exists = await db.prepare('SELECT 1 FROM nodes WHERE public_slug = ?').bind(slug).first()
+    if (!exists) return slug
+  }
+  throw Errors.internal()
 }

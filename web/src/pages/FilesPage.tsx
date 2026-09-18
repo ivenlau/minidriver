@@ -10,6 +10,7 @@ import {
   FolderPlus,
   Grid2x2,
   ArrowUpDown,
+  Globe,
   Home,
   Link2,
   List,
@@ -171,6 +172,22 @@ export function FilesPage() {
     onSuccess: invalidate,
   })
 
+  /** 图床公开直链开关；开启后自动复制直链 */
+  const togglePublic = async (node: NodeDto) => {
+    try {
+      const updated = await api.patch<NodeDto>(`/api/nodes/${node.id}`, { public: !node.publicSlug })
+      invalidate()
+      if (!node.publicSlug && updated.publicSlug) {
+        await navigator.clipboard.writeText(`${location.origin}/i/${updated.publicSlug}`).catch(() => {})
+        toast(t('files.publicCopied'), 'success')
+      } else {
+        toast(t(node.publicSlug ? 'files.publicOff' : 'files.publicOn'), 'success')
+      }
+    } catch (err) {
+      toast(t(`errors.${err instanceof Error && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'}`), 'error')
+    }
+  }
+
   const deleteNodes = async (nodes: NodeDto[]) => {
     let failed = 0
     for (const n of nodes) {
@@ -255,6 +272,12 @@ export function FilesPage() {
       icon: <Link2 size={15} />,
       hidden: node.type !== 'file',
       onSelect: () => setShareNode(node),
+    },
+    {
+      label: node.publicSlug ? t('files.disablePublic') : t('files.makePublic'),
+      icon: <Globe size={15} />,
+      hidden: node.type !== 'file',
+      onSelect: () => void togglePublic(node),
     },
     {
       label: node.starred ? t('files.unstar') : t('files.star'),

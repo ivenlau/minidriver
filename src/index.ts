@@ -6,6 +6,7 @@ import { nodes } from './routes/nodes'
 import { files } from './routes/files'
 import { shares } from './routes/shares'
 import { publicShare } from './routes/public'
+import { imageLink } from './routes/images'
 import { runMaintenance } from './scheduled'
 
 const app = new Hono<AppEnv>()
@@ -15,6 +16,8 @@ app.onError(errorHandler)
 app.notFound(notFoundHandler)
 
 app.get('/api/health', (c) => c.json({ ok: true, ts: Date.now() }))
+// 图床公开直链（根路径 /i/:slug，wrangler.jsonc 已把 /i/* 指向 Worker）
+app.route('/', imageLink)
 // 公开分享路由必须最先挂载：authed 子应用的全局 requireAuth 中间件
 // 会覆盖 /api/* 全部路径，后注册的路由无法逃逸（Hono 按注册顺序组装）
 app.route('/api', publicShare)

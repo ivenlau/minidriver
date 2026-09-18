@@ -435,6 +435,32 @@ async function main() {
     check('超 1MB 内容 → 400', tooBig.res.status === 400 && tooBig.json?.error?.code === 'CONTENT_TOO_LARGE', JSON.stringify(tooBig.json))
   }
 
+  // 图床公开直链
+  {
+    const pub = await call('PATCH', `/api/nodes/${helloId}`, { body: { public: true } })
+    check('开启公开直链', pub.res.status === 200 && !!pub.json?.publicSlug, JSON.stringify(pub.json))
+    const slug = pub.json?.publicSlug
+    const img = await fetch(`${BASE}/i/${slug}`)
+    check(
+      '直链公开可访问（无鉴权 + public 缓存 + CORS）',
+      img.status === 200 &&
+        (img.headers.get('cache-control') ?? '').includes('public') &&
+        img.headers.get('access-control-allow-origin') === '*',
+      `status=${img.status} cc=${img.headers.get('cache-control')}`,
+    )
+    const bad = await fetch(`${BASE}/i/wrongslug123`)
+    check('错误 slug → 404', bad.status === 404)
+    const renamed = await call('PATCH', `/api/nodes/${helloId}`, { body: { name: 'renamed.md' } })
+    const stillUp = await fetch(`${BASE}/i/${slug}`)
+    check('重命名不影响直链', renamed.res.status === 200 && stillUp.status === 200)
+    await call('PATCH', `/api/nodes/${helloId}`, { body: { name: 'hello.txt' } })
+    const off = await call('PATCH', `/api/nodes/${helloId}`, { body: { public: false } })
+    check('关闭公开直链', off.res.status === 200 && off.json?.publicSlug === null)
+    check('关闭后直链 → 404', (await fetch(`${BASE}/i/${slug}`)).status === 404)
+    const repub = await call('PATCH', `/api/nodes/${helloId}`, { body: { public: true } })
+    check('重新开启直链', repub.res.status === 200 && !!repub.json?.publicSlug)
+  }
+
   // 分享：密码 + 公开访问 + 吊销
   let shareUrl, shareToken
   {

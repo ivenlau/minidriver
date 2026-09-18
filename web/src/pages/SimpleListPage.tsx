@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Clock, Download, FolderInput, Pencil, Star, StarOff, Trash2 } from 'lucide-react'
+import { Clock, Download, FolderInput, Globe, Pencil, Star, StarOff, Trash2 } from 'lucide-react'
 import { api } from '../lib/api'
 import type { NodeDto } from '../lib/types'
 import { downloadNodes } from '../lib/download'
@@ -92,6 +92,21 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
     else openPreview(node)
   }
 
+  const togglePublic = async (node: NodeDto) => {
+    try {
+      const updated = await api.patch<NodeDto>(`/api/nodes/${node.id}`, { public: !node.publicSlug })
+      invalidate()
+      if (!node.publicSlug && updated.publicSlug) {
+        await navigator.clipboard.writeText(`${location.origin}/i/${updated.publicSlug}`).catch(() => {})
+        toast(t('files.publicCopied'), 'success')
+      } else {
+        toast(t(node.publicSlug ? 'files.publicOff' : 'files.publicOn'), 'success')
+      }
+    } catch (err) {
+      toast(t(`errors.${err instanceof Error && 'code' in err ? (err as { code: string }).code : 'UNKNOWN'}`), 'error')
+    }
+  }
+
   const menuFor = (node: NodeDto): MenuItem[] => [
     { label: t('common.open'), onSelect: () => openNode(node) },
     {
@@ -104,6 +119,12 @@ export function SimpleListPage({ mode }: { mode: 'starred' | 'recent' }) {
       label: t('common.share'),
       hidden: node.type !== 'file',
       onSelect: () => setShareNode(node),
+    },
+    {
+      label: node.publicSlug ? t('files.disablePublic') : t('files.makePublic'),
+      icon: <Globe size={15} />,
+      hidden: node.type !== 'file',
+      onSelect: () => void togglePublic(node),
     },
     {
       label: t('files.unstar'),
