@@ -4,7 +4,7 @@ import { Errors, AppError } from './lib/errors'
 import type { AppEnv } from './lib/env'
 import { allowedOrigins } from './lib/env'
 import { sha256Hex } from './lib/ids'
-import { SID_COOKIE, SESSION_ABS_MS, SESSION_TTL_MS } from './lib/session'
+import { sessionCookieName, SESSION_ABS_MS, SESSION_TTL_MS } from './lib/session'
 
 const SESSION_RENEW_MS = 24 * 3600 * 1000
 
@@ -33,7 +33,7 @@ export async function originCheck(c: Context<AppEnv>, next: Next) {
 
 /** 会话鉴权；滑动续期：距上次活跃 >24h 时顺延（绝对上限 90 天） */
 export async function requireAuth(c: Context<AppEnv>, next: Next) {
-  const token = getCookie(c, SID_COOKIE)
+  const token = getCookie(c, sessionCookieName(c.env))
   if (!token) throw Errors.unauthorized('AUTH_REQUIRED')
   const id = await sha256Hex(token)
   const row = await c.env.DB.prepare('SELECT * FROM sessions WHERE id = ?').bind(id).first<SessionRow>()
@@ -51,7 +51,7 @@ export async function requireAuth(c: Context<AppEnv>, next: Next) {
 
 /** 可选会话：有合法会话则设置 userId，否则匿名放行 */
 export async function optionalAuth(c: Context<AppEnv>, next: Next) {
-  const token = getCookie(c, SID_COOKIE)
+  const token = getCookie(c, sessionCookieName(c.env))
   if (token) {
     const id = await sha256Hex(token)
     const row = await c.env.DB.prepare('SELECT user_id, expires_at FROM sessions WHERE id = ?').bind(id).first<{

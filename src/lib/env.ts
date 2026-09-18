@@ -16,6 +16,10 @@ export type Env = {
   /** 32B base64：HMAC 签名 Cookie + AES 加密 TOTP secret */
   SESSION_ENC_KEY: string
   SETUP_TOKEN: string
+  /** 联动部署（如 miniblog）L1：认证 RP ID（如根域）。设置后 Passkey 可跨子域应用共享；未设置 = 现有行为 */
+  AUTH_RP_ID?: string
+  /** 联动部署 L1：SSO 会话 Cookie 域（父域）。设置后会话在根域子域间通用；未设置 = 现有行为 */
+  AUTH_COOKIE_DOMAIN?: string
 }
 
 export type Vars = {
@@ -43,7 +47,7 @@ export function allowedOrigins(env: Env, requestUrl: string): string[] {
   return list.length > 0 ? list : [publicOrigin(env, requestUrl)]
 }
 
-/** WebAuthn RP ID（恒为完整主机名，对任何域名都合法） */
+/** WebAuthn RP ID：AUTH_RP_ID 优先（联动部署统一根域），否则完整主机名 */
 export function rpID(env: Env, requestUrl: string): string {
-  return new URL(publicOrigin(env, requestUrl)).hostname
+  return env.AUTH_RP_ID?.trim() || new URL(publicOrigin(env, requestUrl)).hostname
 }
