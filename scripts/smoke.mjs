@@ -581,6 +581,17 @@ async function main() {
     check('设备列表含当前会话', (sessions.json?.sessions ?? []).some((s) => s.isCurrent))
   }
 
+  // 回归：硬删除带有分享记录的文件（生产 D1 外键强制，shares 需级联清理）
+  {
+    const shared = await call('POST', `/api/files/fast?name=${encodeURIComponent('shared-del.txt')}&mime=text/plain`, {
+      raw: true,
+      body: new TextEncoder().encode('x'),
+    })
+    await call('POST', '/api/shares', { body: { nodeId: shared.json?.id, expiresIn: 3600 } })
+    const hd = await call('DELETE', `/api/nodes/${shared.json?.id}?hard=1`)
+    check('硬删除带分享的文件', hd.res.status === 200, JSON.stringify(hd.json))
+  }
+
   console.log(`\n结果：${passed} 通过，${failed} 失败\n`)
   process.exit(failed > 0 ? 1 : 0)
 }

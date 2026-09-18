@@ -168,10 +168,10 @@ nodes.delete('/nodes/:id', async (c) => {
 
   if (hard) {
     const { results } = await c.env.DB.prepare(
-      `WITH RECURSIVE sub(id) AS (
-        SELECT id FROM nodes WHERE id = ?
+      `WITH RECURSIVE sub(id, r2_key, thumb_key) AS (
+        SELECT id, r2_key, thumb_key FROM nodes WHERE id = ?
         UNION ALL
-        SELECT n.id FROM nodes n JOIN sub ON n.parent_id = sub.id
+        SELECT n.id, n.r2_key, n.thumb_key FROM nodes n JOIN sub ON n.parent_id = sub.id
       ) SELECT id, r2_key, thumb_key FROM sub`,
     )
       .bind(node.id)
