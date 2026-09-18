@@ -494,6 +494,11 @@ async function main() {
     check('回收站可见', trash.json?.items?.some((n) => n.id === helloId))
     const trashedContent = await fetch(`${BASE}/api/nodes/${helloId}/content`, { headers: { cookie: jar.header() } })
     check('回收站内文件可预览/下载', trashedContent.status === 200)
+    const trashedPut = await call('PUT', `/api/nodes/${helloId}/content`, {
+      raw: true,
+      body: new TextEncoder().encode('edited in trash'),
+    })
+    check('回收站内文件可编辑保存', trashedPut.res.status === 200, JSON.stringify(trashedPut.json))
     const gone = await call('GET', `/api/nodes?parent=${folderId}`)
     check('原目录不可见', !gone.json?.items?.some((n) => n.id === helloId))
 

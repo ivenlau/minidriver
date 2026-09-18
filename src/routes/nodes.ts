@@ -256,8 +256,8 @@ async function uniqueNameForRestore(
 const MAX_TEXT_CONTENT = 1024 * 1024
 
 nodes.put('/nodes/:id/content', async (c) => {
+  // 与 GET content 一致：回收站中的文件允许主人编辑保存
   const node = await requireNode(c.env.DB, c.req.param('id'))
-  if (node.deleted_at) throw Errors.notFound('NODE_NOT_FOUND')
   if (node.type !== 'file' || !node.r2_key) throw Errors.badRequest('NOT_A_FILE')
   const buf = await c.req.arrayBuffer()
   if (buf.byteLength > MAX_TEXT_CONTENT) throw Errors.badRequest('CONTENT_TOO_LARGE')
