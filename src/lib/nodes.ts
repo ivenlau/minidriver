@@ -80,6 +80,33 @@ const SUBTREE = `WITH RECURSIVE sub(id) AS (
   SELECT n.id FROM nodes n JOIN sub ON n.parent_id = sub.id
 )`
 
+export function placeholders(n: number): string {
+  return Array.from({ length: n }, () => '?').join(',')
+}
+
+/** 递归收集子树全部 id（SELECT 形式的 CTE 在 D1 生产环境完全支持） */
+export async function subtreeIds(db: AppEnv['Bindings']['DB'], rootId: string): Promise<string[]> {
+  const { results } = await db.prepare(`${SUBTREE} SELECT id FROM sub`).bind(rootId).all<{ id: string }>()
+  return (results ?? []).map((r) => r.id)
+}
+
+/**
+ * 分批执行带 IN 列表的写入语句。
+ * 生产 D1 对「写入语句 + WITH CTE」支持不稳，且单语句绑定参数上限 100，
+ * 因此统一：SELECT 收集子树 id → 分批（90/批）执行普通 UPDATE/DELETE。
+ */
+export async function batchedIn(
+  db: AppEnv['Bindings']['DB'],
+  buildSql: (ph: string) => string,
+  params: unknown[],
+  ids: string[],
+): Promise<void> {
+  for (let i = 0; i < ids.length; i += 90) {
+    const chunk = ids.slice(i, i + 90)
+    await db.prepare(buildSql(placeholders(chunk.length))).bind(...params, ...chunk).run()
+  }
+}
+
 /** 面包屑（根 → 节点）；对回收站中的节点同样有效 */
 export async function getBreadcrumbs(
   db: AppEnv['Bindings']['DB'],

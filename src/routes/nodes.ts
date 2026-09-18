@@ -11,6 +11,8 @@ import {
   assertNameAvailable,
   getBreadcrumbs,
   subtreeContains,
+  subtreeIds,
+  batchedIn,
   isPreviewable,
   toNodeDto,
   type NodeRow,
@@ -174,32 +176,23 @@ nodes.delete('/nodes/:id', async (c) => {
     )
       .bind(node.id)
       .all<{ id: string; r2_key: string | null; thumb_key: string | null }>()
-    const keys = (results ?? []).flatMap((r) => [r.r2_key, r.thumb_key].filter((k): k is string => !!k))
+    const rows = results ?? []
+    const keys = rows.flatMap((r) => [r.r2_key, r.thumb_key].filter((k): k is string => !!k))
     for (let i = 0; i < keys.length; i += 100) {
       await c.env.R2.delete(keys.slice(i, i + 100))
     }
-    await c.env.DB.prepare(
-      `WITH RECURSIVE sub(id) AS (
-        SELECT id FROM nodes WHERE id = ?
-        UNION ALL
-        SELECT n.id FROM nodes n JOIN sub ON n.parent_id = sub.id
-      ) DELETE FROM nodes WHERE id IN (SELECT id FROM sub)`,
-    )
-      .bind(node.id)
-      .run()
+    await batchedIn(c.env.DB, (ph) => `DELETE FROM nodes WHERE id IN (${ph})`, [], rows.map((r) => r.id))
     return c.json({ ok: true, hard: true })
   }
 
   const now = Date.now()
-  await c.env.DB.prepare(
-    `WITH RECURSIVE sub(id) AS (
-      SELECT id FROM nodes WHERE id = ?
-      UNION ALL
-      SELECT n.id FROM nodes n JOIN sub ON n.parent_id = sub.id
-    ) UPDATE nodes SET deleted_at = ? WHERE id IN (SELECT id FROM sub) AND deleted_at IS NULL`,
+  const ids = await subtreeIds(c.env.DB, node.id)
+  await batchedIn(
+    c.env.DB,
+    (ph) => `UPDATE nodes SET deleted_at = ? WHERE id IN (${ph}) AND deleted_at IS NULL`,
+    [now],
+    ids,
   )
-    .bind(node.id, now)
-    .run()
   return c.json({ ok: true })
 })
 
@@ -223,15 +216,14 @@ nodes.post('/nodes/:id/restore', async (c) => {
   }
   const finalParent: string | null = parentId
   const name = await uniqueNameForRestore(c.env.DB, finalParent, node.name, node.id)
-  await c.env.DB.prepare(
-    `WITH RECURSIVE sub(id) AS (
-      SELECT id FROM nodes WHERE id = ?
-      UNION ALL
-      SELECT n.id FROM nodes n JOIN sub ON n.parent_id = sub.id
-    ) UPDATE nodes SET deleted_at = NULL, parent_id = CASE WHEN id = ? THEN ? ELSE parent_id END, name = CASE WHEN id = ? THEN ? ELSE name END WHERE id IN (SELECT id FROM sub)`,
-  )
-    .bind(node.id, node.id, finalParent, node.id, name)
+  const ids = await subtreeIds(c.env.DB, node.id)
+  await c.env.DB.prepare('UPDATE nodes SET deleted_at = NULL, parent_id = ?, name = ?, updated_at = ? WHERE id = ?')
+    .bind(finalParent, name, Date.now(), node.id)
     .run()
+  const rest = ids.filter((id) => id !== node.id)
+  if (rest.length > 0) {
+    await batchedIn(c.env.DB, (ph) => `UPDATE nodes SET deleted_at = NULL WHERE id IN (${ph})`, [], rest)
+  }
   return c.json(toNodeDto(await requireNode(c.env.DB, node.id)))
 })
 
