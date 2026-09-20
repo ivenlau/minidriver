@@ -2,24 +2,23 @@ import { setCookie, deleteCookie, getCookie } from 'hono/cookie'
 import type { Context } from 'hono'
 import type { AppEnv, Env } from './env'
 import { randomToken, sha256Hex } from './ids'
+import { sharedAuthDomain } from './env'
 
 export const SESSION_TTL_MS = 30 * 24 * 3600 * 1000
 export const SESSION_ABS_MS = 90 * 24 * 3600 * 1000
 
 /**
- * 会话 Cookie 名：设置了 AUTH_COOKIE_DOMAIN（联动 L1）时使用父域共享 Cookie（SSO），
- * 否则保持既有 `__Host-sid`（host-only）。
+ * 会话 Cookie 名：开启 BASE_DOMAIN_AUTH（跨子域共享认证）时使用根域共享 Cookie（SSO），
+ * 否则保持既有 `__Host-sid`（host-only）。根域自动推导，无需手填。
  */
-export function sessionCookieName(env: Env): string {
-  return env.AUTH_COOKIE_DOMAIN?.trim() ? '__Secure-md-session' : '__Host-sid'
+export function sessionCookieName(env: Env, requestUrl: string): string {
+  return sharedAuthDomain(env, requestUrl) ? '__Secure-md-session' : '__Host-sid'
 }
 
-function sessionCookieOptions(env: Env) {
+function sessionCookieOptions(env: Env, requestUrl: string) {
   const base = { httpOnly: true, secure: true, sameSite: 'Lax' as const, path: '/' }
-  if (env.AUTH_COOKIE_DOMAIN?.trim()) {
-    return { ...base, domain: env.AUTH_COOKIE_DOMAIN.trim() }
-  }
-  return base
+  const domain = sharedAuthDomain(env, requestUrl)
+  return domain ? { ...base, domain } : base
 }
 
 /** 签发新会话：明文 token 进 Cookie，库里只存 SHA-256 */
@@ -39,11 +38,11 @@ export async function createSession(c: Context<AppEnv>, userId: string): Promise
       c.req.header('CF-IPCountry') ?? null,
     )
     .run()
-  setCookie(c, sessionCookieName(c.env), token, sessionCookieOptions(c.env))
+  setCookie(c, sessionCookieName(c.env, c.req.url), token, sessionCookieOptions(c.env, c.req.url))
 }
 
 export async function destroyCurrentSession(c: Context<AppEnv>): Promise<void> {
-  const token = getCookie(c, sessionCookieName(c.env))
+  const token = getCookie(c, sessionCookieName(c.env, c.req.url))
   if (token) {
     await c.env.DB.prepare('DELETE FROM sessions WHERE id = ?').bind(await sha256Hex(token)).run()
   }
@@ -52,10 +51,10 @@ export async function destroyCurrentSession(c: Context<AppEnv>): Promise<void> {
 
 export function clearSessionCookie(c: Context<AppEnv>): void {
   // __Host- 前缀的 Cookie 在 Hono 里同样要求 secure 属性；父域模式需带 Domain 才能删除
-  deleteCookie(c, sessionCookieName(c.env), {
+  deleteCookie(c, sessionCookieName(c.env, c.req.url), {
     path: '/',
     secure: true,
-    ...(c.env.AUTH_COOKIE_DOMAIN?.trim() ? { domain: c.env.AUTH_COOKIE_DOMAIN.trim() } : {}),
+    ...(sharedAuthDomain(c.env, c.req.url) ? { domain: sharedAuthDomain(c.env, c.req.url) } : {}),
   })
 }
 

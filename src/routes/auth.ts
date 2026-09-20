@@ -72,7 +72,7 @@ auth.get('/bootstrap', async (c) => {
     initialized: !!user,
     authMethods: { password: !!user?.password_hash, totp: !!user?.totp_enabled },
   }
-  const token = getCookie(c, sessionCookieName(c.env))
+  const token = getCookie(c, sessionCookieName(c.env, c.req.url))
   if (token && user) {
     const sessionId = await sha256Hex(token)
     const session = await c.env.DB.prepare('SELECT user_id, expires_at FROM sessions WHERE id = ?')
@@ -328,7 +328,7 @@ auth.get('/auth/me', requireAuth, async (c) => {
 })
 
 auth.get('/auth/sessions', requireAuth, async (c) => {
-  const token = getCookie(c, sessionCookieName(c.env))
+  const token = getCookie(c, sessionCookieName(c.env, c.req.url))
   const currentId = token ? await sha256Hex(token) : ''
   const { results } = await c.env.DB.prepare(
     'SELECT id, created_at, last_seen_at, expires_at, user_agent, ip_country FROM sessions WHERE user_id = ? ORDER BY last_seen_at DESC',
@@ -351,7 +351,7 @@ auth.delete('/auth/sessions/:id', requireAuth, async (c) => {
 })
 
 auth.post('/auth/sessions/revoke-others', requireAuth, async (c) => {
-  const token = getCookie(c, sessionCookieName(c.env))
+  const token = getCookie(c, sessionCookieName(c.env, c.req.url))
   const currentId = token ? await sha256Hex(token) : ''
   await c.env.DB.prepare('DELETE FROM sessions WHERE user_id = ? AND id != ?')
     .bind(c.get('userId'), currentId)

@@ -16,10 +16,13 @@ export type Env = {
   /** 32B base64：HMAC 签名 Cookie + AES 加密 TOTP secret */
   SESSION_ENC_KEY: string
   SETUP_TOKEN: string
-  /** 联动部署（如 miniblog）L1：认证 RP ID（如根域）。设置后 Passkey 可跨子域应用共享；未设置 = 现有行为 */
-  AUTH_RP_ID?: string
-  /** 联动部署 L1：SSO 会话 Cookie 域（父域）。设置后会话在根域子域间通用；未设置 = 现有行为 */
-  AUTH_COOKIE_DOMAIN?: string
+  /**
+   * 跨子域共享认证（SSO）：设为 "true" 时，Passkey RP 与会话 Cookie 自动统一到
+   * APP_PUBLIC_URL（或请求域）的根域——与 Miniblog 都开启且同根域即互通。
+   * 常规根域自动推导（含 com.cn/co.uk 等常见多级后缀）；PSL 托管域（如 github.io）
+   * 浏览器本身不允许跨子域，请保持关闭。
+   */
+  BASE_DOMAIN_AUTH?: string
 }
 
 export type Vars = {
@@ -47,7 +50,19 @@ export function allowedOrigins(env: Env, requestUrl: string): string[] {
   return list.length > 0 ? list : [publicOrigin(env, requestUrl)]
 }
 
-/** WebAuthn RP ID：AUTH_RP_ID 优先（联动部署统一根域），否则完整主机名 */
+/**
+ * 跨子域共享认证开启时的共享域（BASE_DOMAIN_AUTH="true"）；未开启返回 undefined。
+ * 共享域 = 主机名去掉第一段（a.b.c.d → b.c.d；不足三段回退自身）——
+ * 部署域名即「根域 + 一段前缀」（如 f./b./blog.），公共后缀由使用者保证。
+ */
+export function sharedAuthDomain(env: Env, requestUrl: string): string | undefined {
+  if (env.BASE_DOMAIN_AUTH !== 'true') return undefined
+  const host = new URL(publicOrigin(env, requestUrl)).hostname
+  const labels = host.split('.').filter(Boolean)
+  return labels.length < 3 ? host : labels.slice(1).join('.')
+}
+
+/** WebAuthn RP ID：跨子域共享认证开启时统一根域，否则完整主机名 */
 export function rpID(env: Env, requestUrl: string): string {
-  return env.AUTH_RP_ID?.trim() || new URL(publicOrigin(env, requestUrl)).hostname
+  return sharedAuthDomain(env, requestUrl) ?? new URL(publicOrigin(env, requestUrl)).hostname
 }
