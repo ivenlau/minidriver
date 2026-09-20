@@ -1,3 +1,4 @@
 -- 图床公开直链：文件级开关，slug 随机不可枚举；NULL = 未公开
-ALTER TABLE nodes ADD COLUMN public_slug TEXT;
-CREATE UNIQUE INDEX ux_nodes_public_slug ON nodes(public_slug) WHERE public_slug IS NOT NULL;
+-- 已退役：public_slug 列与 ux_nodes_public_slug 索引已并入 0001（最终形态），
+-- 以支持与 Miniblog（1003_nodes_contract.sql）任意顺序初始化同一 D1。
+-- 已应用过本迁移的环境不受影响（迁移记录在案，不会重跑）。

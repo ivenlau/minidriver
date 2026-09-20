@@ -10,6 +10,7 @@
     "run_worker_first": ["/api/*", "/i/*"]
   },
   "r2_buckets": [
+    // 桶名可由 CI 经 R2_BUCKET_NAME 注入；与 miniblog 配同值即共享素材库
     { "binding": "R2", "bucket_name": "minidriver" }
   ],
   "d1_databases": [
