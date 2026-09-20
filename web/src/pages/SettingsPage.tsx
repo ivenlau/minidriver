@@ -5,6 +5,7 @@ import QRCode from 'qrcode'
 import {
   Copy,
   Fingerprint,
+  Link2,
   HardDrive,
   KeyRound,
   Laptop,
@@ -16,7 +17,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { api } from '../lib/api'
-import { useMe, useStorage } from '../state/auth'
+import { useBootstrap, useMe, useStorage } from '../state/auth'
 import { registerPasskey } from '../lib/passkey'
 import type { CredentialDto, SessionDto } from '../lib/types'
 import { formatBytes, formatRelative } from '../lib/format'
@@ -36,6 +37,7 @@ type Section = 'security' | 'appearance' | 'language' | 'storage'
 export function SettingsPage() {
   const { t } = useTranslation()
   const [section, setSection] = useState<Section>('security')
+  const { data: bootstrap } = useBootstrap()
 
   const tabs: { key: Section; label: string; icon: typeof ShieldCheck }[] = [
     { key: 'security', label: t('settings.sectionSecurity'), icon: ShieldCheck },
@@ -58,6 +60,11 @@ export function SettingsPage() {
           >
             <Icon size={17} />
             {label}
+            {key === 'security' && bootstrap?.ssoEnabled && (
+              <span className="rounded-full bg-warn-soft px-1.5 py-0.5 text-[10px] font-medium leading-none text-warn">
+                {t('settings.linkedBadge')}
+              </span>
+            )}
           </button>
         ))}
       </nav>
@@ -86,6 +93,7 @@ function SecuritySection() {
   const { t, i18n } = useTranslation()
   const toast = useToast()
   const qc = useQueryClient()
+  const { data: bootstrap } = useBootstrap()
   const { data: me } = useMe()
 
   const refresh = () => {
@@ -124,6 +132,12 @@ function SecuritySection() {
 
   return (
     <div>
+      {bootstrap?.ssoEnabled && (
+        <div className="mb-5 flex gap-2.5 rounded-xl border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] leading-relaxed text-warn">
+          <ShieldCheck size={16} className="mt-0.5 shrink-0" />
+          <span>{t('settings.linkedHint')}</span>
+        </div>
+      )}
       <Card title={t('settings.passkeys')}>
         <p className="mb-4 text-[13px] leading-relaxed text-muted">{t('settings.passkeysHint')}</p>
         <div className="space-y-1">
@@ -556,12 +570,24 @@ function LanguageSection() {
 
 function StorageSection() {
   const { t } = useTranslation()
+  const { data: bootstrap } = useBootstrap()
   const { data } = useStorage()
   const QUOTA = 10 * 1024 * 1024 * 1024
   const used = data?.used ?? 0
   const pct = Math.min(100, (used / QUOTA) * 100)
   return (
     <Card title={t('settings.sectionStorage')}>
+      {bootstrap?.ssoEnabled && (
+        <div className="mb-4 flex gap-2.5 rounded-xl border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] leading-relaxed text-warn">
+          <Link2 size={16} className="mt-0.5 shrink-0" />
+          <span>
+            <span className="mr-1.5 rounded-full bg-warn px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
+              {t('settings.linkedBadge')}
+            </span>
+            {t('settings.storageLinkedHint')}
+          </span>
+        </div>
+      )}
       <div className="space-y-4">
         <div>
           <div className="mb-2 flex items-baseline justify-between">

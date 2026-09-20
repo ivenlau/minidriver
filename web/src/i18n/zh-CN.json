@@ -198,7 +198,10 @@
     "totpEnabled": "两步验证已启用",
     "totpDisabled": "两步验证已停用",
     "gotIt": "我知道了",
-    "saveFailed": "保存失败"
+    "saveFailed": "保存失败",
+    "linkedBadge": "联动",
+    "linkedHint": "跨子域共享认证已开启：账号、Passkey、密码、两步验证与登录会话与 Miniblog 共用同一数据库——在此处的修改会同时作用于两个应用。",
+    "storageLinkedHint": "联动已开启：Miniblog（博客）的图片素材会存入本网盘的「博客素材/」目录（按月归档），可直接在文件列表中管理。"
   },
   "auth": {
     "loginTitle": "欢迎回来",

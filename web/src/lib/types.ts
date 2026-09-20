@@ -68,6 +68,8 @@ export type Me = {
 export type Bootstrap = {
   initialized: boolean
   authMethods: { password: boolean; totp: boolean }
+  /** 跨子域共享认证（BASE_DOMAIN_AUTH）开启时为 true——与 Miniblog 共享登录与账号数据 */
+  ssoEnabled: boolean
   me?: Me & { userId: string }
 }
 

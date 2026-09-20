@@ -9,7 +9,7 @@ import {
 } from '@simplewebauthn/server'
 import type { RegistrationResponseJSON, AuthenticationResponseJSON } from '@simplewebauthn/server'
 import type { AppEnv } from '../lib/env'
-import { rpID, allowedOrigins } from '../lib/env'
+import { rpID, allowedOrigins, sharedAuthDomain } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { ulid, randomToken, sha256Hex, timingSafeEqualHex } from '../lib/ids'
 import {
@@ -71,6 +71,8 @@ auth.get('/bootstrap', async (c) => {
   const out: Record<string, unknown> = {
     initialized: !!user,
     authMethods: { password: !!user?.password_hash, totp: !!user?.totp_enabled },
+    // 跨子域共享认证（BASE_DOMAIN_AUTH）：与 Miniblog 共享登录与账号数据的可见信号
+    ssoEnabled: !!sharedAuthDomain(c.env, c.req.url),
   }
   const token = getCookie(c, sessionCookieName(c.env, c.req.url))
   if (token && user) {

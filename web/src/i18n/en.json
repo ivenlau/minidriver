@@ -198,7 +198,10 @@
     "totpEnabled": "Two-factor enabled",
     "totpDisabled": "Two-factor disabled",
     "gotIt": "Got it",
-    "saveFailed": "Failed to save"
+    "saveFailed": "Failed to save",
+    "linkedBadge": "Linked",
+    "linkedHint": "Cross-subdomain shared auth is on: the account, passkeys, password, two-factor and login sessions share the same database as Miniblog — changes here apply to both apps.",
+    "storageLinkedHint": "Linkage on: image assets from Miniblog (the blog) are stored in this drive under the “博客素材/” folder (archived by month) and can be managed directly in the file list."
   },
   "auth": {
     "loginTitle": "Welcome back",
