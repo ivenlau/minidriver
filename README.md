@@ -132,7 +132,7 @@ Worker → Settings → Domains & Routes → Add → Custom domain → 填子域
 | GitHub Secret `D1_DATABASE_ID` | 共账号 / 会话 / 凭证 / 恢复码 + 素材元数据（nodes 表） |
 | GitHub Secret `R2_BUCKET_NAME` | 共文件存储 |
 | Worker Secret `SESSION_ENC_KEY` / `SETUP_TOKEN` | 需同值（共享 TOTP 密文与初始化语义） |
-| Worker 变量 `BASE_DOMAIN_AUTH` = `true` | SSO：一处登录两站通用；Passkey 跨应用。共享域 = 部署域名去掉第一段（如 `f.minimo.qzz.io` 的共享域为 `minimo.qzz.io`），直接部署在根域上时取根域自身 |
+| Worker 变量 `BASE_DOMAIN_AUTH` = `true` | SSO：一处登录两站通用；Passkey 跨应用。共享域 = 部署域名去掉第一段（如 `drive.demo.qzz.io` 的共享域为 `demo.qzz.io`；`drive.example.com` → `example.com`），直接部署在根域上时取根域自身 |
 
 **联动后的行为**：
 
