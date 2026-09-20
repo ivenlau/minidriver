@@ -60,7 +60,7 @@ export function SettingsPage() {
           >
             <Icon size={17} />
             {label}
-            {key === 'security' && bootstrap?.ssoEnabled && (
+            {(key === 'security' || key === 'storage') && bootstrap?.ssoEnabled && (
               <span className="rounded-full bg-warn-soft px-1.5 py-0.5 text-[10px] font-medium leading-none text-warn">
                 {t('settings.linkedBadge')}
               </span>
@@ -580,12 +580,7 @@ function StorageSection() {
       {bootstrap?.ssoEnabled && (
         <div className="mb-4 flex gap-2.5 rounded-xl border border-warn/40 bg-warn-soft px-4 py-3 text-[13px] leading-relaxed text-warn">
           <Link2 size={16} className="mt-0.5 shrink-0" />
-          <span>
-            <span className="mr-1.5 rounded-full bg-warn px-1.5 py-0.5 text-[10px] font-medium leading-none text-white">
-              {t('settings.linkedBadge')}
-            </span>
-            {t('settings.storageLinkedHint')}
-          </span>
+          <span>{t('settings.storageLinkedHint')}</span>
         </div>
       )}
       <div className="space-y-4">
