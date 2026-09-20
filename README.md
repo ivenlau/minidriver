@@ -36,7 +36,7 @@ npm run dev                           # wrangler dev(8787, API) + vite dev(5173,
 
 | # | 值 | 从哪里取 | 设置到哪里 |
 |---|---|---|---|
-| 1 | R2 桶名 | 创建时自拟，须与 `wrangler.jsonc` 的 `bucket_name` 一致（默认 `minidriver`） | Cloudflare R2 |
+| 1 | R2 桶名 | 创建时自拟，须与 `wrangler.jsonc` 的 `bucket_name` 一致（默认 `minidriver`）；可再设 GitHub Secret `R2_BUCKET_NAME` 覆盖 | Cloudflare R2 |
 | 2 | D1 Database ID | 创建数据库后的详情页（32 位 UUID） | GitHub Secret `D1_DATABASE_ID` |
 | 3 | Account ID | dashboard 右侧边栏 / Workers & Pages 概览页 | GitHub Secret `CLOUDFLARE_ACCOUNT_ID` |
 | 4 | API Token | My Profile → API Tokens（见第 1 步） | GitHub Secret `CLOUDFLARE_API_TOKEN` |
@@ -60,6 +60,7 @@ npm run dev                           # wrangler dev(8787, API) + vite dev(5173,
 | `CLOUDFLARE_API_TOKEN` | 第 1 步第 3 项 |
 | `CLOUDFLARE_ACCOUNT_ID` | 第 1 步第 4 项 |
 | `D1_DATABASE_ID` | 第 1 步第 2 项 |
+| `R2_BUCKET_NAME`（可选） | 桶名覆盖；默认用 `wrangler.jsonc` 的 `minidriver`。与 Miniblog 联动时两侧配同值（见联动章节） |
 
 ### 第 3 步：首次运行 Action（自动创建 Worker）
 
@@ -90,7 +91,7 @@ Actions → Deploy → Run workflow 再跑一次，全绿后：
 ### 备选：dashboard 关联 Git（Workers Builds）
 
 Workers & Pages → Create → Workers → Import an existing repository（注意是 Workers，不是 Pages）。
-先在 Worker 的 Settings → **Build variables** 定义 `D1_DATABASE_ID`，然后：
+先在 Worker 的 Settings → **Build variables** 定义 `D1_DATABASE_ID` 与 `R2_BUCKET_NAME`（可选），然后：
 
 | 设置项 | 值 |
 |---|---|
@@ -116,9 +117,29 @@ Worker → Settings → Domains & Routes → Add → Custom domain → 填子域
 |---|---|
 | 迁移步骤报 `authentication error` | API Token 缺 `D1 Edit` 权限，回第 1 步补勾 |
 | 部署步骤报找不到 D1 / binding 错误 | `D1_DATABASE_ID` 缺失或复制带了空格 |
-| 部署步骤报 R2 权限 / 不存在 | Token 缺 R2 权限，或桶名与 `wrangler.jsonc` 不一致 |
+| 部署步骤报 R2 权限 / 不存在 | Token 缺 R2 权限，或桶名与 `R2_BUCKET_NAME` / `wrangler.jsonc` 不一致 |
 | 冒烟测试失败 | 打开该步骤日志看具体断言，多为代码回归 |
 | 线上 401 / 认证异常但部署成功 | 第 4 步的三个 Cloudflare Secrets 未配置齐全 |
+
+---
+
+## 与 Miniblog 联动（可选）
+
+[Miniblog](../miniblog) 是同系的单用户个人博客（SSR 公开站 + Markdown 写作后台 PWA）。无模式开关：**两个仓库的部署配置指到同一资源，联动即自然产生**；各自指向则完全独立、互不影响。
+
+| 配置（两个仓库对称设置） | 相同时的效果 |
+|---|---|
+| GitHub Secret `D1_DATABASE_ID` | 共账号 / 会话 / 凭证 / 恢复码 + 素材元数据（nodes 表） |
+| GitHub Secret `R2_BUCKET_NAME` | 共文件存储 |
+| Worker Secret `SESSION_ENC_KEY` / `SETUP_TOKEN` | 需同值（共享 TOTP 密文与初始化语义） |
+| Worker 变量 `BASE_DOMAIN_AUTH` = `true` | SSO：一处登录两站通用；Passkey 跨应用。共享域 = 部署域名去掉第一段（如 `f.minimo.qzz.io` 的共享域为 `minimo.qzz.io`），直接部署在根域上时取根域自身 |
+
+**联动后的行为**：
+
+- 任一侧登录 / 注册的账号与 Passkey 两边通用；本仓库「安全」设置页会显示「联动」标识，密码 / TOTP / 会话吊销等修改即时双向生效
+- Miniblog 的图片素材存入本网盘「博客素材/年-月/」目录，「存储」设置页会显示联动说明；这些文件可直接预览 / 分享 / 管理
+- 素材公开直链由 Miniblog 本域提供（`/assets/<slug>`），本仓库的图床 `/i/<slug>` 照常可用；网盘侧彻底删除文件后博客侧链接自然失效
+- **顺序无关**：两侧迁移均已幂等化，谁先初始化同一 D1 都安全（后部署方的迁移对已有表自动跳过）
 
 ---
 
