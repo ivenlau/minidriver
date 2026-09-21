@@ -32,13 +32,22 @@ export type Vars = {
 export type AppEnv = { Bindings: Env; Variables: Vars }
 export type App = Hono<AppEnv>
 
-function isConfigured(url: string | undefined): boolean {
-  return !!url && !url.includes('<your-subdomain>')
-}
-
-/** 规范来源：优先配置值，否则回退到当前请求的来源 */
+/**
+ * 规范来源：优先配置值，否则回退到当前请求的来源。
+ * 配置值做容错处理：trim、自动补 https:// 前缀（手填漏协议是高频错误）、
+ * 解析失败（非法值）时回退请求来源并告警——绝不让配置错误演变成写操作 500。
+ */
 export function publicOrigin(env: Env, requestUrl: string): string {
-  return isConfigured(env.APP_PUBLIC_URL) ? env.APP_PUBLIC_URL : new URL(requestUrl).origin
+  const raw = env.APP_PUBLIC_URL?.trim()
+  if (raw && !raw.includes('<your-subdomain>')) {
+    const withScheme = /^https?:\/\//i.test(raw) ? raw : `https://${raw}`
+    try {
+      return new URL(withScheme).origin
+    } catch {
+      console.warn(`[config] APP_PUBLIC_URL 无效（"${raw}"），已回退到请求来源`)
+    }
+  }
+  return new URL(requestUrl).origin
 }
 
 /** CSRF / WebAuthn 校验用的来源白名单 */
