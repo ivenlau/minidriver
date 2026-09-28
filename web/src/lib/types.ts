@@ -55,6 +55,13 @@ export type CredentialDto = {
   createdAt: number
 }
 
+export type DavTokenDto = {
+  id: string
+  name: string
+  createdAt: number
+  lastUsedAt: number | null
+}
+
 export type Me = {
   userId: string
   email: string

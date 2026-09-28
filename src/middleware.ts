@@ -22,6 +22,9 @@ export type SessionRow = {
 export async function originCheck(c: Context<AppEnv>, next: Next) {
   const method = c.req.method.toUpperCase()
   if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') return next()
+  // WebDAV（/dav/*）：HTTP Basic 凭证随请求显式携带，不是浏览器自动附带的环境凭证，
+  // 跨站伪造请求拿不到 Authorization 头，CSRF 模型不适用
+  if (c.req.path === '/dav' || c.req.path.startsWith('/dav/')) return next()
 
   const origin = c.req.header('Origin')
   if (origin && !allowedOrigins(c.env, c.req.url).includes(origin)) {

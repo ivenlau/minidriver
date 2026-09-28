@@ -545,6 +545,108 @@ async function main() {
     )
   }
 
+  // WebDAV 挂载端点（Basic 认证 + PROPFIND/PUT/MKCOL/MOVE/COPY/DELETE 全链路）
+  let davTokenId
+  {
+    const created = await call('POST', '/api/auth/dav-tokens', { body: { name: 'Smoke DAV' } })
+    check('生成 WebDAV 令牌', created.res.status === 201 && created.json?.token?.startsWith('mdav_'), JSON.stringify(created.json))
+    davTokenId = created.json?.id
+    const davPass = created.json?.token
+
+    const dav = async (method, path, { headers = {}, body } = {}) => {
+      const h = { authorization: `Basic ${Buffer.from(`minidriver:${davPass}`).toString('base64')}`, ...headers }
+      const res = await fetch(`${BASE}/dav${path}`, { method, headers: h, body })
+      return { res, text: await res.text().catch(() => null) }
+    }
+
+    const opt = await fetch(`${BASE}/dav/`, { method: 'OPTIONS' })
+    check('OPTIONS 免认证返回能力', opt.status === 200 && (opt.headers.get('dav') ?? '').includes('1'))
+
+    const noAuth = await fetch(`${BASE}/dav/`, { method: 'PROPFIND', headers: { depth: '0' } })
+    check('无认证 PROPFIND → 401 + WWW-Authenticate', noAuth.status === 401 && !!noAuth.headers.get('www-authenticate'))
+    const badTok = await fetch(`${BASE}/dav/`, {
+      method: 'PROPFIND',
+      headers: { depth: '0', authorization: `Basic ${Buffer.from('x:mdav_wrongwrongwrong').toString('base64')}` },
+    })
+    check('错误令牌 → 401', badTok.status === 401)
+
+    const root0 = await dav('PROPFIND', '/', { headers: { depth: '0' } })
+    check('根 PROPFIND Depth 0 → 207', root0.res.status === 207 && root0.text?.includes('<D:collection/>'), `status=${root0.res.status}`)
+    check('根目录带容量配额属性', root0.text?.includes('quota-available-bytes'))
+
+    const root1 = await dav('PROPFIND', '/', { headers: { depth: '1' } })
+    check('Depth 1 列出已有目录（URL 编码中文）', root1.text?.includes(encodeURIComponent('文档')))
+
+    const inf = await dav('PROPFIND', '/', { headers: { depth: 'infinity' } })
+    check('Depth infinity → 400', inf.res.status === 400)
+
+    const mk = await dav('MKCOL', '/dav-dir/')
+    check('MKCOL 建目录 → 201', mk.res.status === 201, `status=${mk.res.status}`)
+    const mkDup = await dav('MKCOL', '/dav-dir/')
+    check('MKCOL 已存在 → 405', mkDup.res.status === 405)
+
+    const put = await dav('PUT', '/dav-dir/hello-dav.txt', { headers: { 'content-type': 'text/plain' }, body: 'dav content' })
+    check('PUT 新文件 → 201', put.res.status === 201, `status=${put.res.status}`)
+    const putOver = await dav('PUT', '/dav-dir/hello-dav.txt', { headers: { 'content-type': 'text/plain' }, body: 'dav content v2' })
+    check('PUT 覆盖 → 204', putOver.res.status === 204)
+
+    const get = await fetch(`${BASE}/dav/dav-dir/hello-dav.txt`, {
+      headers: { authorization: `Basic ${Buffer.from(`a:${davPass}`).toString('base64')}` },
+    })
+    check('GET 内容一致', get.status === 200 && (await get.text()) === 'dav content v2')
+    const head = await fetch(`${BASE}/dav/dav-dir/hello-dav.txt`, {
+      method: 'HEAD',
+      headers: { authorization: `Basic ${Buffer.from(`a:${davPass}`).toString('base64')}` },
+    })
+    check('HEAD 返回 Content-Length', head.status === 200 && head.headers.get('content-length') === String('dav content v2'.length))
+    const range = await fetch(`${BASE}/dav/dav-dir/hello-dav.txt`, {
+      headers: { authorization: `Basic ${Buffer.from(`a:${davPass}`).toString('base64')}`, range: 'bytes=0-2' },
+    })
+    check('GET Range → 206 切片', range.status === 206 && (await range.text()) === 'dav')
+
+    const list = await dav('PROPFIND', '/dav-dir/', { headers: { depth: '1' } })
+    check('PROPFIND 子目录含文件与大小', list.text?.includes('hello-dav.txt') && list.text?.includes('<D:getcontentlength>14</D:getcontentlength>'))
+
+    const copy = await dav('COPY', '/dav-dir/hello-dav.txt', { headers: { destination: `${BASE}/dav/dav-dir/copy-dav.txt` } })
+    check('COPY 文件 → 201', copy.res.status === 201, `status=${copy.res.status}`)
+    const copyNoOver = await dav('COPY', '/dav-dir/hello-dav.txt', {
+      headers: { destination: `${BASE}/dav/dav-dir/copy-dav.txt`, overwrite: 'F' },
+    })
+    check('COPY Overwrite:F 且目标存在 → 412', copyNoOver.res.status === 412)
+
+    const move = await dav('MOVE', '/dav-dir/copy-dav.txt', { headers: { destination: `${BASE}/dav/dav-dir/moved-dav.txt` } })
+    check('MOVE 改名 → 201', move.res.status === 201, `status=${move.res.status}`)
+    const oldGone = await dav('GET', '/dav-dir/copy-dav.txt')
+    check('原路径 → 404', oldGone.res.status === 404)
+    const moveOver = await dav('MOVE', '/dav-dir/hello-dav.txt', { headers: { destination: `${BASE}/dav/dav-dir/moved-dav.txt` } })
+    check('MOVE 覆盖已存在 → 204', moveOver.res.status === 204)
+    const overContent = await dav('GET', '/dav-dir/moved-dav.txt')
+    check('覆盖后内容为源文件', overContent.text === 'dav content v2')
+
+    const moveCycle = await dav('MOVE', '/dav-dir', { headers: { destination: `${BASE}/dav/dav-dir/inner/x` } })
+    check('MOVE 进不存在目录 → 409', moveCycle.res.status === 409)
+
+    // NFC/NFD：客户端以 NFD 形式访问 NFC 存储的名字（Mac/iOS 兼容）
+    const zhName = '中文目录'
+    const mkZh = await dav('MKCOL', `/${encodeURIComponent(zhName)}/`)
+    const nfdFile = encodeURIComponent(`${zhName}.txt`.normalize('NFD'))
+    const putNfd = await dav('PUT', `/${encodeURIComponent(zhName)}/${nfdFile}`, { headers: { 'content-type': 'text/plain' }, body: 'nfd' })
+    check('NFD 路径 PUT 命中 NFC 目录 → 201', putNfd.res.status === 201, `status=${putNfd.res.status}`)
+    const nfcList = await dav('PROPFIND', `/${encodeURIComponent(zhName)}/`, { headers: { depth: '1' } })
+    check('NFC 形式可列出 NFD 写入的文件', nfcList.text?.includes('.txt'))
+
+    const del = await dav('DELETE', '/dav-dir/moved-dav.txt')
+    check('DELETE 文件 → 204', del.res.status === 204)
+    const goneAfterDel = await dav('GET', '/dav-dir/moved-dav.txt')
+    check('删除后 → 404', goneAfterDel.res.status === 404)
+    const trash = await call('GET', '/api/trash')
+    check('DAV 删除进回收站（软删除）', trash.json?.items?.some((n) => n.name === 'moved-dav.txt'))
+
+    const revoke = await call('DELETE', `/api/auth/dav-tokens/${davTokenId}`)
+    const afterRevoke = await dav('PROPFIND', '/', { headers: { depth: '0' } })
+    check('吊销令牌后 DAV → 401', revoke.res.status === 200 && afterRevoke.res.status === 401)
+  }
+
   // 登出 + Passkey 重新登录
   {
     const out = await call('POST', '/api/auth/logout')

@@ -6,6 +6,7 @@
 
 - **Passkey 登录**：指纹 / 面容一次验证直达，密码 + TOTP + 一次性恢复码兜底
 - **临时分享**：限时限次限密码的链接，访客免登录在线预览（图片 / 视频 / 音频 / PDF / 文本），可吊销可删除
+- **WebDAV 挂载**：网盘直接出现在电脑磁盘 / iPhone「文件」App 里，独立令牌随时吊销
 - **文件管理**：分块上传断点续传、Range 流式播放、目录树、搜索、星标、回收站、Markdown / TXT 在线编辑与实时预览、**图床公开直链**（`/i/<slug>`，可作外链图床）
 - **中英双语 · 亮暗主题 · 桌面 / 移动自适应**
 
@@ -143,6 +144,32 @@ Worker → Settings → Domains & Routes → Add → Custom domain → 填子域
 
 ---
 
+## WebDAV 挂载（可选）
+
+把网盘直接挂进系统文件管理器：**设置 → 安全 → WebDAV 挂载** → 生成新令牌（仅显示一次）。
+
+| 客户端 | 填法 |
+|---|---|
+| 挂载地址 | `https://<你的域名>/dav/` |
+| 用户名 | 任意（如 `minidriver`） |
+| 密码 | 设置页生成的令牌（`mdav_` 开头） |
+
+各平台接法：
+
+- **Windows**：文件资源管理器 → 此电脑 → 映射网络驱动器。自带 WebDAV 客户端默认单文件上限 50MB（注册表 `HKLM\SYSTEM\CurrentControlSet\Services\WebClient\Parameters\FileSizeLimitInBytes` 最高可调至 4GB），且大文件体验一般——更推荐 [RaiDrive](https://www.raidrive.com/) 或 `rclone mount`
+- **macOS**：Finder → ⌘K「连接服务器」→ 输入挂载地址
+- **iOS**：自带「连接服务器」仅支持 SMB；装一个支持 WebDAV 的文件 App（Documents、FE 文件管理器等）后，网盘会出现在系统「文件」App 的位置列表里
+
+行为与限制：
+
+- 读写全量支持：列目录 / 下载（Range 断点）/ 上传覆盖 / 建目录 / 改名移动 / 删除（**进回收站**，30 天可恢复）
+- 单请求体受 Cloudflare 上限（免费版约 100MB），**大文件上传请走网页端分块**；下载不受限
+- 目录复制不支持（返回 502）；文件复制走 R2 流式直通
+- 令牌与会话同安全模型（库内只存 SHA-256、删除即吊销），可按设备各发一枚
+- 本地开发地址为 `http://127.0.0.1:8787/dav/`（vite dev 已代理 5173 同路径）
+
+---
+
 ## 生产建议
 
 | 项 | 说明 |
@@ -173,7 +200,7 @@ Worker → Settings → Domains & Routes → Add → Custom domain → 填子域
 ## 项目结构
 
 ```
-src/          Worker（Hono API：auth / nodes / files / shares / public + Cron 清理）
+src/          Worker（Hono API：auth / nodes / files / shares / public / dav + Cron 清理）
 web/          React SPA（页面 / 组件 / i18n / 上传队列 / 主题）
 migrations/   D1 SQL 迁移
 scripts/      smoke.mjs（伪造 WebAuthn 认证器的冒烟测试）

@@ -201,7 +201,14 @@
     "saveFailed": "保存失败",
     "linkedBadge": "联动",
     "linkedHint": "跨子域共享认证已开启：账号、Passkey、密码、两步验证与登录会话与 Miniblog 共用同一数据库——在此处的修改会同时作用于两个应用。",
-    "storageLinkedHint": "联动已开启：Miniblog（博客）的图片素材会存入本网盘的「博客素材/」目录（按月归档），可直接在文件列表中管理。"
+    "storageLinkedHint": "联动已开启：Miniblog（博客）的图片素材会存入本网盘的「博客素材/」目录（按月归档），可直接在文件列表中管理。",
+    "webdav": "WebDAV 挂载",
+    "webdavHint": "让网盘直接出现在电脑磁盘或 iPhone「文件」App 里：客户端地址填上方挂载 URL，用户名任意，密码用下方令牌。大文件上传（超过约 100MB）请仍使用网页端。",
+    "addDavToken": "生成新令牌",
+    "davTokenNamePrompt": "令牌名称（如「iPhone 文件 App」）",
+    "davTokenCreated": "令牌已生成",
+    "davTokenOnce": "请立即保存，此令牌只显示这一次。客户端中用户名可任填。",
+    "deleteDavTokenConfirm": "删除「{{name}}」后，使用该令牌的设备将立即失去连接，确认删除？"
   },
   "auth": {
     "loginTitle": "欢迎回来",

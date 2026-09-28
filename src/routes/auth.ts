@@ -361,6 +361,47 @@ auth.post('/auth/sessions/revoke-others', requireAuth, async (c) => {
   return c.json({ ok: true })
 })
 
+// ---------------------------------------------------------------- WebDAV 令牌（挂载用）
+
+type DavTokenRow = {
+  id: string
+  name: string
+  created_at: number
+  last_used_at: number | null
+}
+
+/** 令牌列表（只含元数据，明文仅创建时返回一次） */
+auth.get('/auth/dav-tokens', requireAuth, async (c) => {
+  const { results } = await c.env.DB.prepare(
+    'SELECT id, name, created_at, last_used_at FROM webdav_tokens ORDER BY created_at',
+  ).all<DavTokenRow>()
+  return c.json({
+    tokens: (results ?? []).map((r) => ({
+      id: r.id,
+      name: r.name,
+      createdAt: r.created_at,
+      lastUsedAt: r.last_used_at,
+    })),
+  })
+})
+
+/** 生成新令牌：mdav_ 前缀 + 32B 随机，库里只存 SHA-256 */
+auth.post('/auth/dav-tokens', requireAuth, async (c) => {
+  const body = await readJson(c)
+  const name = typeof body.name === 'string' && body.name.trim() ? body.name.trim().slice(0, 50) : 'WebDAV'
+  const token = `mdav_${randomToken(32)}`
+  const id = ulid()
+  await c.env.DB.prepare('INSERT INTO webdav_tokens (id, token_hash, name, created_at) VALUES (?, ?, ?, ?)')
+    .bind(id, await sha256Hex(token), name, Date.now())
+    .run()
+  return c.json({ id, token }, 201)
+})
+
+auth.delete('/auth/dav-tokens/:id', requireAuth, async (c) => {
+  await c.env.DB.prepare('DELETE FROM webdav_tokens WHERE id = ?').bind(c.req.param('id')).run()
+  return c.json({ ok: true })
+})
+
 // ---------------------------------------------------------------- Passkey 管理
 
 auth.get('/auth/webauthn/register/options', requireAuth, async (c) => {

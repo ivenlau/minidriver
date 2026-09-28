@@ -7,6 +7,7 @@ import { files } from './routes/files'
 import { shares } from './routes/shares'
 import { publicShare } from './routes/public'
 import { imageLink } from './routes/images'
+import { dav } from './routes/dav'
 import { runMaintenance } from './scheduled'
 
 const app = new Hono<AppEnv>()
@@ -25,6 +26,8 @@ app.route('/api', auth)
 app.route('/api', nodes)
 app.route('/api', files)
 app.route('/api', shares)
+// WebDAV 挂载端点（wrangler.jsonc 的 run_worker_first 需含 /dav/*）
+app.route('/dav', dav)
 
 export default {
   fetch: app.fetch,

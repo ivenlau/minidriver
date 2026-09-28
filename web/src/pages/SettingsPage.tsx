@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import QRCode from 'qrcode'
 import {
   Copy,
+  FolderKey,
   Fingerprint,
   Link2,
   HardDrive,
@@ -19,7 +20,7 @@ import {
 import { api } from '../lib/api'
 import { useBootstrap, useMe, useStorage } from '../state/auth'
 import { registerPasskey } from '../lib/passkey'
-import type { CredentialDto, SessionDto } from '../lib/types'
+import type { CredentialDto, DavTokenDto, SessionDto } from '../lib/types'
 import { formatBytes, formatRelative } from '../lib/format'
 import { LangPicker, ThemePicker } from '../components/ThemeLang'
 import {
@@ -100,6 +101,7 @@ function SecuritySection() {
     void qc.invalidateQueries({ queryKey: ['me'] })
     void qc.invalidateQueries({ queryKey: ['credentials'] })
     void qc.invalidateQueries({ queryKey: ['sessions'] })
+    void qc.invalidateQueries({ queryKey: ['dav-tokens'] })
   }
 
   const [addingPasskey, setAddingPasskey] = useState(false)
@@ -214,6 +216,7 @@ function SecuritySection() {
       <PasswordCard me={me} onChange={refresh} errText={errText} />
       <TotpCard me={me} onChange={refresh} errText={errText} />
       <RecoveryCard me={me} onChange={refresh} onGenerated={setShowRecovery} errText={errText} />
+      <WebdavCard onChange={refresh} errText={errText} />
 
       <PromptDialog
         open={addingPasskey}
@@ -546,6 +549,111 @@ function RecoveryCodesModal({ codes, onClose }: { codes: string[] | null; onClos
         </Button>
       </div>
     </Modal>
+  )
+}
+
+// ---------------------------------------------------------------- WebDAV 挂载
+
+function WebdavCard({ onChange, errText }: { onChange: () => void; errText: (e: unknown) => string }) {
+  const { t, i18n } = useTranslation()
+  const toast = useToast()
+  const [adding, setAdding] = useState(false)
+  const [created, setCreated] = useState<string | null>(null)
+  const [deleting, setDeleting] = useState<DavTokenDto | null>(null)
+
+  const tokensQuery = useQuery({
+    queryKey: ['dav-tokens'],
+    queryFn: () => api.get<{ tokens: DavTokenDto[] }>('/api/auth/dav-tokens'),
+  })
+
+  const mountUrl = `${location.origin}/dav/`
+  const copyText = async (text: string) => {
+    await navigator.clipboard.writeText(text).catch(() => {})
+    toast(t('common.copied'), 'success')
+  }
+
+  const create = async (name: string) => {
+    try {
+      const res = await api.post<{ id: string; token: string }>('/api/auth/dav-tokens', { name })
+      setAdding(false)
+      setCreated(res.token)
+      onChange()
+    } catch (err) {
+      toast(errText(err), 'error')
+    }
+  }
+
+  return (
+    <Card title={t('settings.webdav')}>
+      <p className="mb-4 text-[13px] leading-relaxed text-muted">{t('settings.webdavHint')}</p>
+      <div className="mb-4 flex items-center justify-between gap-3 rounded-xl bg-surface2 px-4 py-3">
+        <code className="min-w-0 flex-1 truncate text-[13px]">{mountUrl}</code>
+        <Button variant="ghost" size="icon" title={t('common.copy')} onClick={() => void copyText(mountUrl)}>
+          <Copy size={15} />
+        </Button>
+      </div>
+      <div className="space-y-1">
+        {(tokensQuery.data?.tokens ?? []).map((tok) => (
+          <div key={tok.id} className="group flex items-center gap-3 rounded-xl px-2 py-2.5 hover:bg-surface2/60">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-surface2 text-muted">
+              <FolderKey size={16} />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[13px]">{tok.name}</p>
+              <p className="text-[12px] text-muted">
+                {tok.lastUsedAt
+                  ? t('settings.lastUsed', { time: formatRelative(tok.lastUsedAt, i18n.language) })
+                  : t('settings.neverUsed')}
+              </p>
+            </div>
+            <Button variant="ghost" size="icon" className="shrink-0 text-danger" title={t('common.delete')} onClick={() => setDeleting(tok)}>
+              <Trash2 size={15} />
+            </Button>
+          </div>
+        ))}
+      </div>
+      <Button variant="secondary" size="sm" className="mt-3" onClick={() => setAdding(true)}>
+        <Plus size={15} />
+        {t('settings.addDavToken')}
+      </Button>
+
+      <PromptDialog
+        open={adding}
+        title={t('settings.davTokenNamePrompt')}
+        confirmLabel={t('common.continue')}
+        onClose={() => setAdding(false)}
+        onConfirm={(name) => void create(name)}
+      />
+      <Modal open={!!created} onClose={() => setCreated(null)} title={t('settings.davTokenCreated')}>
+        <p className="mb-3 text-[13px] leading-relaxed text-muted">{t('settings.davTokenOnce')}</p>
+        <div className="break-all rounded-xl bg-surface2 p-4 font-mono text-[12.5px] tracking-wide">{created}</div>
+        <div className="mt-4 flex justify-end gap-2.5">
+          <Button onClick={() => created && void copyText(created)}>
+            <Copy size={14} />
+            {t('auth.copyAll')}
+          </Button>
+          <Button variant="primary" onClick={() => setCreated(null)}>
+            {t('settings.gotIt')}
+          </Button>
+        </div>
+      </Modal>
+      <ConfirmDialog
+        open={!!deleting}
+        title={t('common.delete')}
+        message={deleting ? t('settings.deleteDavTokenConfirm', { name: deleting.name }) : undefined}
+        danger
+        onClose={() => setDeleting(null)}
+        onConfirm={async () => {
+          if (!deleting) return
+          try {
+            await api.del(`/api/auth/dav-tokens/${deleting.id}`)
+            onChange()
+          } catch (err) {
+            toast(errText(err), 'error')
+          }
+        }}
+      />
+    </Card>
   )
 }
 
