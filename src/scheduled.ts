@@ -1,6 +1,6 @@
 import type { Env } from './lib/env'
 
-/** Cron 每日维护：回收站 30 天清理、遗留分块上传清理、过期分享记录清理 */
+/** Cron 每日维护：回收站 30 天清理、遗留分块上传清理、过期分享记录清理、过期会话物理清理 */
 export async function runMaintenance(env: Env): Promise<void> {
   const now = Date.now()
   const day = 24 * 3600 * 1000
@@ -50,4 +50,8 @@ export async function runMaintenance(env: Env): Promise<void> {
   )
     .bind(shareCutoff, shareCutoff)
     .run()
+
+  // 4) 过期会话物理清理：设备列表已过滤过期行，这里清掉库内死行防堆积
+  //    （隐身窗 / PWA 多容器登录产生的多设备会话不受影响——只清已过期的）
+  await env.DB.prepare('DELETE FROM sessions WHERE expires_at < ?').bind(now).run()
 }
