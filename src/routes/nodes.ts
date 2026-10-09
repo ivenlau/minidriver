@@ -3,7 +3,7 @@ import type { AppEnv } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { ulid, base64urlEncode, base64urlDecode } from '../lib/ids'
 import { serveR2Object, parseRange } from '../lib/r2'
-import { normalizeMime } from '../lib/mime'
+import { normalizeMime, isInlineRenderable } from '../lib/mime'
 import { requireAuth } from '../middleware'
 import { readJson, validateNodeName } from '../lib/validate'
 import {
@@ -15,7 +15,6 @@ import {
   subtreeIds,
   batchedIn,
   generatePublicSlug,
-  isPreviewable,
   toNodeDto,
   type NodeRow,
 } from '../lib/nodes'
@@ -289,7 +288,7 @@ nodes.get('/nodes/:id/content', async (c) => {
   const obj = await c.env.R2.get(node.r2_key, range ? { range } : undefined)
   if (!obj) throw Errors.notFound('OBJECT_MISSING')
   const mime = normalizeMime(node.name, node.mime)
-  const download = c.req.query('dl') === '1' || !isPreviewable(mime)
+  const download = c.req.query('dl') === '1' || !isInlineRenderable(mime)
   return serveR2Object(obj, { name: node.name, mime, disposition: download ? 'attachment' : 'inline' }, c.req.raw)
 })
 

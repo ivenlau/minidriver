@@ -160,3 +160,18 @@ export function resolveContentType(name: string, mime?: string | null): string {
   const base = normalizeMime(name, mime)
   return isTextualMime(base) ? `${base}; charset=utf-8` : base
 }
+
+/**
+ * 浏览器内联展示白名单：图片/音视频/PDF。
+ * 文本类不在此列——直链打开一律走下载；文本内容在应用内 fetch 预览，
+ * 不依赖浏览器渲染，attachment 不影响预览与 <img>/<video> 嵌入。
+ */
+export function isInlineRenderable(mime: string): boolean {
+  const base = mime.split(';')[0]!.trim().toLowerCase()
+  return (
+    base.startsWith('image/') ||
+    base.startsWith('video/') ||
+    base.startsWith('audio/') ||
+    base === 'application/pdf'
+  )
+}

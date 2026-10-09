@@ -8,7 +8,7 @@ import { serveR2Object, parseRange } from '../lib/r2'
 import { cookieOpts } from '../lib/session'
 import { readJson } from '../lib/validate'
 import { isPreviewable } from '../lib/nodes'
-import { normalizeMime } from '../lib/mime'
+import { normalizeMime, isInlineRenderable } from '../lib/mime'
 import { shareStatus } from './shares'
 
 /**
@@ -139,7 +139,7 @@ publicShare.get('/s/:token/content', async (c) => {
       .run()
   }
   const mime = normalizeMime(share.name, share.mime)
-  const download = c.req.query('dl') === '1' || !isPreviewable(mime)
+  const download = c.req.query('dl') === '1' || !isInlineRenderable(mime)
   return serveR2Object(obj, { name: share.name, mime, disposition: download ? 'attachment' : 'inline' }, c.req.raw)
 })
 

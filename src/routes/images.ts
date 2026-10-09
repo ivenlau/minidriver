@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { parseRange } from '../lib/r2'
-import { resolveContentType } from '../lib/mime'
+import { resolveContentType, isInlineRenderable } from '../lib/mime'
 
 /**
  * 图床公开直链：GET /i/:slug
@@ -23,14 +23,16 @@ imageLink.get('/i/:slug', async (c) => {
   const obj = await c.env.R2.get(node.r2_key, range ? { range } : undefined)
   if (!obj) throw Errors.notFound()
 
+  const mime = resolveContentType(node.name, node.mime)
+  const disposition = isInlineRenderable(mime) ? 'inline' : 'attachment'
   const headers: Record<string, string> = {
-    'Content-Type': resolveContentType(node.name, node.mime),
+    'Content-Type': mime,
     'Cache-Control': 'public, max-age=86400',
     'Access-Control-Allow-Origin': '*',
     ETag: obj.httpEtag,
     'Accept-Ranges': 'bytes',
     'X-Content-Type-Options': 'nosniff',
-    'Content-Disposition': `inline; filename*=UTF-8''${encodeURIComponent(node.name)}`,
+    'Content-Disposition': `${disposition}; filename*=UTF-8''${encodeURIComponent(node.name)}`,
   }
 
   if (c.req.header('if-none-match')?.split(',').map((s) => s.trim()).includes(obj.httpEtag)) {
