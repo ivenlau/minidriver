@@ -2,6 +2,7 @@ import { Hono } from 'hono'
 import type { AppEnv } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { parseRange } from '../lib/r2'
+import { resolveContentType } from '../lib/mime'
 
 /**
  * 图床公开直链：GET /i/:slug
@@ -23,7 +24,7 @@ imageLink.get('/i/:slug', async (c) => {
   if (!obj) throw Errors.notFound()
 
   const headers: Record<string, string> = {
-    'Content-Type': node.mime || 'application/octet-stream',
+    'Content-Type': resolveContentType(node.name, node.mime),
     'Cache-Control': 'public, max-age=86400',
     'Access-Control-Allow-Origin': '*',
     ETag: obj.httpEtag,

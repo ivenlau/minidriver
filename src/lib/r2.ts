@@ -1,3 +1,5 @@
+import { resolveContentType } from './mime'
+
 /** 解析 Range 头为 R2 range 选项；格式非法时返回 null（按 200 全量返回） */
 export function parseRange(header: string | null | undefined, size: number): { offset: number; length: number } | null {
   if (!header || size <= 0) return null
@@ -55,7 +57,7 @@ export function serveR2Object(obj: R2ObjectBody, opts: ServeOptions, req: Reques
 function baseHeaders(opts: ServeOptions): Record<string, string> {
   const asciiFallback = opts.name.replace(/[^\x20-\x7e]/g, '_').replace(/"/g, "'")
   return {
-    'Content-Type': opts.mime || 'application/octet-stream',
+    'Content-Type': resolveContentType(opts.name, opts.mime),
     'Content-Disposition': `${opts.disposition ?? 'inline'}; filename="${asciiFallback}"; filename*=UTF-8''${encodeURIComponent(opts.name)}`,
     'X-Content-Type-Options': 'nosniff',
     'Cache-Control': 'private, max-age=0, must-revalidate',

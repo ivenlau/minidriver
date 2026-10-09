@@ -8,6 +8,7 @@ import { serveR2Object, parseRange } from '../lib/r2'
 import { cookieOpts } from '../lib/session'
 import { readJson } from '../lib/validate'
 import { isPreviewable } from '../lib/nodes'
+import { normalizeMime } from '../lib/mime'
 import { shareStatus } from './shares'
 
 /**
@@ -74,14 +75,15 @@ publicShare.get('/s/:token/meta', async (c) => {
       return c.json({ needPassword: true, expiresAt: share.expires_at })
     }
   }
+  const mime = normalizeMime(share.name, share.mime)
   return c.json({
     needPassword: false,
     name: share.name,
     size: share.size,
-    mime: share.mime,
+    mime,
     hasThumb: !!share.thumb_key,
     expiresAt: share.expires_at,
-    previewable: isPreviewable(share.mime),
+    previewable: isPreviewable(mime),
   })
 })
 
@@ -107,15 +109,16 @@ publicShare.post('/s/:token/unlock', async (c) => {
     await signValue(c.env.SESSION_ENC_KEY, { sid: share.id, exp: Date.now() + 3600 * 1000 }),
     cookieOpts(),
   )
+  const mime = normalizeMime(share.name, share.mime)
   return c.json({
     ok: true,
     meta: {
       name: share.name,
       size: share.size,
-      mime: share.mime,
+      mime,
       hasThumb: !!share.thumb_key,
       expiresAt: share.expires_at,
-      previewable: isPreviewable(share.mime),
+      previewable: isPreviewable(mime),
     },
   })
 })
@@ -135,8 +138,9 @@ publicShare.get('/s/:token/content', async (c) => {
       .bind(Date.now(), share.id)
       .run()
   }
-  const download = c.req.query('dl') === '1' || !isPreviewable(share.mime)
-  return serveR2Object(obj, { name: share.name, mime: share.mime ?? '', disposition: download ? 'attachment' : 'inline' }, c.req.raw)
+  const mime = normalizeMime(share.name, share.mime)
+  const download = c.req.query('dl') === '1' || !isPreviewable(mime)
+  return serveR2Object(obj, { name: share.name, mime, disposition: download ? 'attachment' : 'inline' }, c.req.raw)
 })
 
 publicShare.get('/s/:token/thumb', async (c) => {

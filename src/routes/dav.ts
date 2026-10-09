@@ -5,6 +5,7 @@ import { ulid, sha256Hex } from '../lib/ids'
 import { serveR2Object, parseRange } from '../lib/r2'
 import { validateNodeName } from '../lib/validate'
 import { subtreeIds, subtreeContains, batchedIn, type NodeRow } from '../lib/nodes'
+import { normalizeMime, resolveContentType } from '../lib/mime'
 
 /**
  * WebDAV 挂载端点（/dav/*）：让网盘直接出现在系统文件管理器里。
@@ -221,7 +222,7 @@ function propResponse(segs: Segments, node: NodeRow | null, isFolder: boolean, q
   if (!isFolder && node) {
     props.push(
       `<D:getcontentlength>${node.size ?? 0}</D:getcontentlength>`,
-      `<D:getcontenttype>${xmlEscape(node.mime ?? 'application/octet-stream')}</D:getcontenttype>`,
+      `<D:getcontenttype>${xmlEscape(normalizeMime(node.name, node.mime))}</D:getcontenttype>`,
       `<D:getetag>"${node.id}"</D:getetag>`,
     )
   } else {
@@ -249,7 +250,7 @@ async function davGet(c: Context<AppEnv>, r: Resolved, isRoot: boolean): Promise
     return new Response(null, {
       status: 200,
       headers: {
-        'Content-Type': r.node.mime ?? 'application/octet-stream',
+        'Content-Type': resolveContentType(r.node.name, r.node.mime),
         'Content-Length': String(obj.size),
         ETag: obj.httpEtag,
         'Accept-Ranges': 'bytes',
@@ -274,7 +275,7 @@ async function davPut(c: Context<AppEnv>, r: Resolved, isRoot: boolean): Promise
   const declared = lenHeader !== null ? Number.parseInt(lenHeader, 10) : NaN
   if (Number.isFinite(declared) && declared > MAX_FILE_SIZE) return c.body(null, 507)
 
-  const mime = c.req.header('content-type')?.split(';')[0]!.trim() || r.node?.mime || 'application/octet-stream'
+  const mime = normalizeMime(r.leafName, c.req.header('content-type') || r.node?.mime)
   const id = r.node?.id ?? ulid()
   const key = r.node?.r2_key ?? `f/${id}`
   const size = await writeR2FromRequest(c, key, mime, Number.isFinite(declared) ? declared : null)

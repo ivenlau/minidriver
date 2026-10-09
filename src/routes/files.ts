@@ -6,6 +6,7 @@ import { serveR2Object } from '../lib/r2'
 import { requireAuth } from '../middleware'
 import { readJson, validateNodeName } from '../lib/validate'
 import { getNode, requireNode, assertNameAvailable, toNodeDto } from '../lib/nodes'
+import { normalizeMime } from '../lib/mime'
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 * 1024 // 10 GB
 const MAX_PART_SIZE = 64 * 1024 * 1024
@@ -24,7 +25,7 @@ files.post('/files/init', async (c) => {
   const body = await readJson(c)
   const name = validateNodeName(body.name)
   const parentId = typeof body.parentId === 'string' && body.parentId ? body.parentId : null
-  const mime = typeof body.mime === 'string' && body.mime ? body.mime : 'application/octet-stream'
+  const mime = normalizeMime(name, typeof body.mime === 'string' ? body.mime : null)
   const size = typeof body.size === 'number' && Number.isInteger(body.size) && body.size >= 0 ? body.size : -1
   if (size < 0 || size > MAX_FILE_SIZE) throw Errors.badRequest('SIZE_INVALID')
   if (parentId) {
@@ -124,7 +125,7 @@ files.post('/files/:id/abort', async (c) => {
 files.post('/files/fast', async (c) => {
   const name = validateNodeName(c.req.query('name'))
   const parentId = c.req.query('parentId') || null
-  const mime = c.req.query('mime') || 'application/octet-stream'
+  const mime = normalizeMime(name, c.req.query('mime') ?? null)
   if (parentId) {
     const parent = await getNode(c.env.DB, parentId)
     if (!parent || parent.type !== 'folder') throw Errors.notFound('NODE_NOT_FOUND')

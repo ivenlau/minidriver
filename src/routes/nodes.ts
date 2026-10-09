@@ -3,6 +3,7 @@ import type { AppEnv } from '../lib/env'
 import { Errors } from '../lib/errors'
 import { ulid, base64urlEncode, base64urlDecode } from '../lib/ids'
 import { serveR2Object, parseRange } from '../lib/r2'
+import { normalizeMime } from '../lib/mime'
 import { requireAuth } from '../middleware'
 import { readJson, validateNodeName } from '../lib/validate'
 import {
@@ -287,8 +288,9 @@ nodes.get('/nodes/:id/content', async (c) => {
   const range = parseRange(c.req.header('range'), node.size ?? 0)
   const obj = await c.env.R2.get(node.r2_key, range ? { range } : undefined)
   if (!obj) throw Errors.notFound('OBJECT_MISSING')
-  const download = c.req.query('dl') === '1' || !isPreviewable(node.mime)
-  return serveR2Object(obj, { name: node.name, mime: node.mime ?? '', disposition: download ? 'attachment' : 'inline' }, c.req.raw)
+  const mime = normalizeMime(node.name, node.mime)
+  const download = c.req.query('dl') === '1' || !isPreviewable(mime)
+  return serveR2Object(obj, { name: node.name, mime, disposition: download ? 'attachment' : 'inline' }, c.req.raw)
 })
 
 nodes.get('/nodes/:id/thumb', async (c) => {

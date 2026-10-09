@@ -1,6 +1,7 @@
 import type { AppEnv } from './env'
 import { Errors } from './errors'
 import { randomToken } from './ids'
+import { normalizeMime } from './mime'
 
 export type NodeRow = {
   id: string
@@ -44,7 +45,7 @@ export function toNodeDto(n: NodeRow, extra: Partial<NodeDto> = {}): NodeDto {
     name: n.name,
     parentId: n.parent_id,
     size: n.size,
-    mime: n.mime,
+    mime: normalizeMime(n.name, n.mime),
     starred: !!n.starred,
     hasThumb: !!n.thumb_key,
     publicSlug: n.public_slug ?? null,
@@ -142,11 +143,12 @@ export async function subtreeContains(
   return !!row
 }
 
-/** 预览类型判定（与前端保持一致的简化版） */
+/** 预览类型判定（与前端保持一致的简化版）；mime 可带 charset 等参数 */
 export function isPreviewable(mime: string | null): boolean {
   if (!mime) return false
-  if (mime.startsWith('image/') || mime.startsWith('video/') || mime.startsWith('audio/')) return true
-  return ['application/pdf', 'text/plain', 'application/json'].includes(mime) || mime.startsWith('text/')
+  const base = mime.split(';')[0]!.trim().toLowerCase()
+  if (base.startsWith('image/') || base.startsWith('video/') || base.startsWith('audio/')) return true
+  return ['application/pdf', 'text/plain', 'application/json'].includes(base) || base.startsWith('text/')
 }
 
 /** 生成图床直链 slug（16 字符 base64url，先查重避免撞唯一索引） */
